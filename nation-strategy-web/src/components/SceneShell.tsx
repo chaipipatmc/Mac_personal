@@ -8,7 +8,7 @@ interface Props {
   chapter?: string
   headline: string
   badges: Basis[]
-  intro: ReactNode
+  intro?: ReactNode
   takeaway: string
   children: ReactNode
   wide?: boolean
@@ -19,15 +19,19 @@ export function SceneShell({ id, chapter, headline, badges, intro, takeaway, chi
   return (
     <section id={id} className={`scene${wide ? ' scene-wide' : ''}`} aria-labelledby={`${id}-h`}>
       <div className="scene-inner">
-        {chapter && <p className="chapter">{chapter}</p>}
         <header className="scene-head">
-          <p className="scene-no">ฉาก {scene.no} · {scene.nav}</p>
+          <p className="scene-no">
+            {chapter && <span className="chapter">{chapter}</span>}
+            <span>{scene.no} · {scene.nav}</span>
+          </p>
           <h2 id={`${id}-h`}>{headline}</h2>
-          <div className="badges">{badges.map((b) => <Badge key={b} kind={b} />)}</div>
-          <div className="intro">{intro}</div>
+          <div className="head-meta">
+            <div className="badges">{badges.map((b) => <Badge key={b} kind={b} />)}</div>
+            {intro && <div className="intro">{intro}</div>}
+          </div>
         </header>
         <div className="visual">{children}</div>
-        <p className="takeaway"><span className="takeaway-label">สรุป</span>{takeaway}</p>
+        <p className="takeaway"><span className="takeaway-label">Key</span>{takeaway}</p>
       </div>
     </section>
   )

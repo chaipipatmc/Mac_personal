@@ -1,6 +1,17 @@
 import { useApp } from '../lib/appContext'
 import { dependencyPaths, wsById } from '../data/nationPlan'
 import { SceneShell } from './SceneShell'
+import { Icon, type IconName } from './Icon'
+
+const PATH_ICON: Record<string, IconName> = { people: 'people', data: 'data', business: 'growth', local: 'local' }
+/** Proposed no-skip gates (shown with a lock). */
+const NO_SKIP = new Set(['p3', 'p5', 'd2', 'd4', 'l1'])
+const PARALLEL: Record<string, string> = {
+  people: 'Survey คน + งาน + ระบบพร้อมกัน',
+  data: 'Prototype ด้วย Mock/Allowed Data ได้ก่อน',
+  business: 'Gov ไม่รอ Audience ID · Community Plan ไม่รอ Platform',
+  local: 'เตรียมคู่ขนาน · ไม่รอ AI Pilots',
+}
 
 /** Ids of the selected node and its direct previous/next neighbours. */
 function neighbourhood(selected: string | null) {
@@ -33,28 +44,30 @@ export function DependencyMap() {
   return (
     <SceneShell
       id="dependency"
-      headline="ทำก่อน เพราะงานถัดไปต้องใช้"
+      headline="Dependency Map"
       badges={['proposal']}
-      intro={<p>ลำดับงานที่เสนอ 4 เส้นทาง — ไม่ใช่ Critical Path ที่คำนวณแล้ว เพราะยังไม่มีข้อมูลทรัพยากรและระยะเวลางานย่อยที่ยืนยัน · แตะงานเพื่อไฮไลต์งานก่อนหน้าและถัดไป</p>}
-      takeaway="เชื่อมระบบเฉพาะส่วนที่จำเป็น ไม่สร้างเงื่อนไขให้ทุกงานรอกัน"
+      intro={<p>ลำดับที่เสนอ (ไม่ใช่ Critical Path ที่คำนวณแล้ว) · แตะเพื่อดู Before / Next</p>}
+      takeaway="เชื่อมระบบเท่าที่จำเป็น — ไม่ให้ทุกงานต้องรอกัน"
     >
       <div className="dep-legend" aria-label="คำอธิบายเส้น">
-        <span><i className="lg-solid" aria-hidden="true" /> เส้นทึบ = เงื่อนไขก่อนผ่านจุดตรวจ</span>
-        <span><i className="lg-dash" aria-hidden="true" /> เส้นประ = สนับสนุน ทำคู่ขนานได้</span>
-        {hood && <button type="button" className="mini-btn" onClick={close}>ล้างการเลือก</button>}
+        <span><i className="lg-solid" aria-hidden="true" /> Hard Gate</span>
+        <span><Icon name="lock" size={16} /> No-skip</span>
+        <span><i className="lg-dash" aria-hidden="true" /> Support / Parallel</span>
+        {hood && <button type="button" className="mini-btn" onClick={close}>Clear</button>}
       </div>
       <div className={`depmap${hood ? ' has-focus' : ''}`}>
         <button type="button" className={`r3-rail${selection?.kind === 'workstream' && selection.id === 'R3' ? ' is-selected' : ''}`} aria-haspopup="dialog" onClick={(e) => select({ kind: 'workstream', id: 'R3' }, e.currentTarget)}>
+          <Icon name="data" size={26} />
           <span className="ws-id">R3</span>
           <span className="rail-title">{r3.title}</span>
-          <span className="rail-note">ฐานเชื่อม · สนับสนุนเฉพาะส่วนที่ใช้</span>
+          <span className="rail-note">Shared Foundation · ใช้เท่าที่จำเป็น</span>
         </button>
         <div className="dep-paths">
           {dependencyPaths.map((p) => (
             <div key={p.id} className={`dep-path${p.usesR3 ? ' uses-r3' : ''}${hood && hood.path !== p.id ? ' path-dim' : ''}`}>
               <div className="dep-path-head">
-                <h3>{p.title}</h3>
-                {p.usesR3 && <span className="r3-tag">ใช้ข้อมูลจาก R3 <span aria-hidden="true">┄</span></span>}
+                <h3><Icon name={PATH_ICON[p.id]} size={20} />{p.title}</h3>
+                {p.usesR3 && <span className="r3-tag">┄ uses R3</span>}
               </div>
               {p.lanes.map((lane, li) => (
                 <div key={li} className="dep-lane">
@@ -63,16 +76,16 @@ export function DependencyMap() {
                     {lane.nodes.map((n) => (
                       <li key={n.id} className={`dep-item${stateOf(n.id)}`}>
                         <button type="button" className="dep-node" aria-haspopup="dialog" aria-pressed={n.id === selectedId} onClick={(e) => select({ kind: 'depnode', id: n.id }, e.currentTarget)}>
-                          {hood && n.id === hood.prev && <span className="dep-rel">ก่อนหน้า</span>}
-                          {hood && n.id === hood.next && <span className="dep-rel">ถัดไป</span>}
-                          {n.label}
+                          {hood && n.id === hood.prev && <span className="dep-rel">Before</span>}
+                          {hood && n.id === hood.next && <span className="dep-rel">Next</span>}
+                          <span className="dep-label">{NO_SKIP.has(n.id) && <Icon name="lock" size={14} />}{n.label}</span>
                         </button>
                       </li>
                     ))}
                   </ol>
                 </div>
               ))}
-              <p className="dep-parallel"><span className="lg-dash-inline" aria-hidden="true" /> คู่ขนาน: {p.parallel}</p>
+              <p className="dep-parallel"><Icon name="parallel" size={16} />{PARALLEL[p.id]}</p>
             </div>
           ))}
         </div>

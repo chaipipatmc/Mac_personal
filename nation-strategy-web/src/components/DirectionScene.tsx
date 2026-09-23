@@ -1,21 +1,26 @@
 import { useApp } from '../lib/appContext'
 import { meta, outcomes, pillars } from '../data/nationPlan'
-import { fmtDate } from '../lib/dates'
 import { SceneShell } from './SceneShell'
+import { Icon, type IconName } from './Icon'
+
+const OUTCOME_ICON: Record<string, IconName> = { O1: 'agile', O2: 'link', O3: 'growth' }
+const TAG_ICON: Record<string, IconName> = {
+  Workforce: 'people', Workflow: 'flow', 'JD/KPI': 'target', Delayer: 'stack',
+  'Internal System': 'tech', CRM: 'user', 'Audience Data': 'data', 'Content Archive': 'content',
+  '4C Community': 'community', 'Gov Intelligence': 'gov', 'Local Network': 'local',
+}
+const PILLAR_ICON: Record<string, IconName> = { People: 'people', Process: 'process', Data: 'data', Technology: 'tech', AI: 'ai' }
 
 export function DirectionScene() {
-  const { select, isSelected, goScene } = useApp()
+  const { select, isSelected } = useApp()
   return (
     <SceneShell
       id="direction"
-      chapter="บท A · ทิศทางจากประชุม"
-      headline="Nation สู่ Media Tech"
+      chapter="A · From Meeting"
+      headline="Nation → Media Tech"
       badges={['meeting']}
-      intro={<>
-        <p className="lede">{meta.keyMessage}</p>
-        <p>สรุปทิศทางจากประชุม {fmtDate(meta.dataAsOf)} โดย {meta.presenter} · การจัดภาพเป็นการสังเคราะห์เพื่อสื่อสาร ไม่ใช่โครงสร้างที่อนุมัติ</p>
-      </>}
-      takeaway="เปลี่ยนทั้งองค์กรและวิธีทำธุรกิจ ไม่ใช่เพิ่มเครื่องมือ AI"
+      intro={<p className="lede">{meta.keyMessage}</p>}
+      takeaway="เปลี่ยนทั้งองค์กรและ Business Model — ไม่ใช่แค่เพิ่ม AI Tools"
     >
       <div className="direction">
         <div className="dir-core" aria-label="NATION สู่ MEDIA TECH">
@@ -35,25 +40,20 @@ export function DirectionScene() {
                 onClick={(e) => select({ kind: 'outcome', id: o.id }, e.currentTarget)}
                 aria-haspopup="dialog"
               >
+                <span className="outcome-ico"><Icon name={OUTCOME_ICON[o.id]} size={30} /></span>
                 <span className="outcome-label">{o.label}</span>
-                <span className="outcome-tags">{o.expands.join(' · ')}</span>
-                <span className="more-cue">ดูรายละเอียด</span>
+                <span className="icon-tags">
+                  {o.expands.map((t) => <span key={t} className="itag"><Icon name={TAG_ICON[t] ?? 'plus'} size={16} />{t}</span>)}
+                </span>
+                <span className="more-cue">Details</span>
               </button>
             </li>
           ))}
         </ul>
         <div className="pillars" aria-label="องค์ประกอบของการเปลี่ยน">
           {pillars.map((p, i) => (
-            <span key={p} className="pillar">{p}{i < pillars.length - 1 && <span className="plus" aria-hidden="true">+</span>}</span>
+            <span key={p} className="pillar"><Icon name={PILLAR_ICON[p]} size={18} />{p}{i < pillars.length - 1 && <span className="plus" aria-hidden="true">+</span>}</span>
           ))}
-        </div>
-        <div className="dir-questions">
-          <p>คำถามที่หน้านี้ตอบ</p>
-          <ol>
-            {[['value', 'เราจะไปไหน'], ['plan', 'ต้องทำอะไร'], ['dependency', 'อะไรเชื่อมกัน'], ['priority', 'เริ่มอะไรก่อน'], ['timeline', 'ส่งมอบเมื่อไร'], ['decision', 'ต้องตัดสินใจอะไร']].map(([id, q], i) => (
-              <li key={q}><button type="button" className="q-chip" onClick={() => goScene(id as 'plan')}>{i + 1}. {q}</button></li>
-            ))}
-          </ol>
         </div>
       </div>
     </SceneShell>

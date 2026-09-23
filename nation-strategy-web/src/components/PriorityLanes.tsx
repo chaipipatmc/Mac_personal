@@ -1,34 +1,34 @@
 import { useApp } from '../lib/appContext'
 import { pilotCandidates, priorities, planState } from '../data/nationPlan'
 import { SceneShell } from './SceneShell'
+import { Icon, type IconName } from './Icon'
+
+const P_ICON: Record<string, IconName> = { P0: 'unlock', P1: 'gear', P2: 'rocket', P3: 'scale' }
+const P_GATE: Record<string, string> = { P0: 'M2', P1: 'M3', P2: 'M4 → M5 → M6', P3: 'ยังไม่กำหนดวัน' }
 
 export function PriorityLanes() {
   const { select, isSelected } = useApp()
   return (
     <SceneShell
       id="priority"
-      chapter="บท B · Roadmap ที่ Mac เสนอ"
-      headline="ปลดล็อกก่อน ทดลองคู่ขนาน ขยายเมื่อพร้อม"
+      chapter="B · Mac Proposal"
+      headline="Unblock → Pilot → Scale"
       badges={['proposal']}
-      intro={<p>สี่ระดับคือระดับการเตรียมความพร้อมและการลงทุน ไม่ใช่การจัดอันดับความสำคัญของฝ่าย · P1 กับ P2 ไม่ต้องรอกันทั้งหมด</p>}
-      takeaway="ไม่เริ่มทุกระบบพร้อมกัน และไม่หยุดงานธุรกิจเพื่อรอแพลตฟอร์มใหญ่"
+      intro={<p>ระดับความพร้อมและการลงทุน — ไม่ใช่ Ranking ความสำคัญของฝ่าย</p>}
+      takeaway="ไม่เริ่มทุกระบบพร้อมกัน · ไม่หยุด Business เพื่อรอ Platform ใหญ่"
     >
-      <div className="lanes">
-        <div className="parallel-ribbon" aria-label="ทำคู่ขนาน">
-          <strong>เริ่มคู่ขนานได้เลย:</strong> เตรียม Community / AE / Local ไม่ต้องรอสร้างระบบทั้งกลุ่ม — การเปิดใช้งานจริงต้องผ่านเงื่อนไขของงานนั้น
-        </div>
-        {priorities.map((p) => (
-          <div key={p.id} className={`lane lane-${p.id.toLowerCase()}${isSelected('priority', p.id) ? ' is-selected' : ''}`}>
-            <button type="button" className="lane-head" aria-haspopup="dialog" onClick={(e) => select({ kind: 'priority', id: p.id }, e.currentTarget)}>
-              <span className="lane-id">{p.id}</span>
-              <span className="lane-label">{p.label}</span>
-              <span className="lane-reason">{p.reason}</span>
-              <span className="more-cue">ดูรายละเอียด</span>
+      <div className="stairs">
+        {priorities.map((p, i) => (
+          <div key={p.id} className={`step step-${p.id.toLowerCase()}${isSelected('priority', p.id) ? ' is-selected' : ''}`} style={{ ['--lift' as string]: i }}>
+            <button type="button" className="step-head" aria-haspopup="dialog" onClick={(e) => select({ kind: 'priority', id: p.id }, e.currentTarget)}>
+              <Icon name={P_ICON[p.id]} size={28} />
+              <span className="step-id">{p.id}</span>
+              <span className="step-label">{p.label}</span>
             </button>
-            <div className="lane-body">
+            <div className="step-body">
               {p.id === 'P2' ? (
                 <>
-                  <p className="pick-note"><span aria-hidden="true">◌</span> เลือก 2–3 Pilot ที่ M2 <span className="muted">· {planState.selectedPilotIds ? 'เลือกแล้ว' : 'ยังไม่เลือก'}</span></p>
+                  <p className="pick-note">เลือก 2–3 ที่ M2 <span className="muted">· {planState.selectedPilotIds ? 'selected' : 'ยังไม่เลือก'}</span></p>
                   <ul className="cands">
                     {pilotCandidates.map((c) => (
                       <li key={c.id}>
@@ -42,18 +42,19 @@ export function PriorityLanes() {
                     ))}
                   </ul>
                   <button type="button" className={`cand cand-local${isSelected('workstream', 'R7') ? ' is-selected' : ''}`} aria-haspopup="dialog" onClick={(e) => select({ kind: 'workstream', id: 'R7' }, e.currentTarget)}>
-                    <span className="cand-id">Local</span>
-                    <span className="cand-title">Southern Pilot — อนุมัติแยก ไม่กินโควตา AI Pilot</span>
+                    <Icon name="local" size={18} />
+                    <span className="cand-title">Local Pilot · อนุมัติแยก</span>
                   </button>
                 </>
               ) : (
-                <ul className="lane-items">{p.items.map((i) => <li key={i}>{i}</li>)}</ul>
+                <ul className="step-items">{p.items.map((it) => <li key={it}>{it}</li>)}</ul>
               )}
-              <p className="lane-exit"><span>จบเมื่อ</span> {p.exitCondition}</p>
+              <p className="step-gate"><Icon name="flag" size={16} />{P_GATE[p.id]}</p>
             </div>
           </div>
         ))}
       </div>
+      <p className="parallel-ribbon"><Icon name="parallel" size={20} /><span><strong>Parallel:</strong> Community / AE / Local เริ่มเตรียมได้เลย — Go-live ต้องผ่าน Gate ของตัวเอง</span></p>
     </SceneShell>
   )
 }

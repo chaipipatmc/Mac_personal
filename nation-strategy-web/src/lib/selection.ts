@@ -7,14 +7,14 @@ export type SelKind =
 export interface Selection { kind: SelKind; id: string }
 
 export const SCENES = [
-  { id: 'direction', nav: 'ทิศทาง', no: '01', chapter: 'A' },
-  { id: 'plan', nav: 'แผนงาน', no: '02', chapter: 'A' },
-  { id: 'value', nav: 'คุณค่า', no: '03', chapter: 'A' },
-  { id: 'priority', nav: 'ก่อน–หลัง', no: '04', chapter: 'B' },
-  { id: 'dependency', nav: 'งานเชื่อมกัน', no: '05', chapter: 'B' },
+  { id: 'direction', nav: 'Direction', no: '01', chapter: 'A' },
+  { id: 'plan', nav: 'Workstreams', no: '02', chapter: 'A' },
+  { id: 'value', nav: 'Value', no: '03', chapter: 'A' },
+  { id: 'priority', nav: 'Priority', no: '04', chapter: 'B' },
+  { id: 'dependency', nav: 'Dependency', no: '05', chapter: 'B' },
   { id: 'timeline', nav: 'Timeline', no: '06', chapter: 'B' },
-  { id: 'acceptance', nav: 'ตรวจรับ', no: '07', chapter: 'B' },
-  { id: 'decision', nav: 'ขออนุมัติ', no: '08', chapter: 'B' },
+  { id: 'acceptance', nav: 'Acceptance', no: '07', chapter: 'B' },
+  { id: 'decision', nav: 'Decision', no: '08', chapter: 'B' },
 ] as const
 
 export type SceneId = (typeof SCENES)[number]['id']

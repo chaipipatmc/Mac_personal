@@ -161,7 +161,7 @@ export const meta: Meta = {
   timelineStart: '2026-09-24',
   timelineEnd: '2026-12-31',
   keyMessage: 'เปลี่ยนทิศทาง Media Tech ให้เป็นงานที่มีเจ้าของ ลำดับ และผลลัพธ์ชัดเจน',
-  closing: 'ทิศทางชัด → เจ้าของชัด → ลงมือเป็นลำดับ → ตรวจผลได้',
+  closing: 'Clear Direction → Clear Owner → Sequenced Execution → Measurable Result',
 }
 
 /** Unknown / not-yet-decided state. Kept null on purpose. */
@@ -212,8 +212,8 @@ export const sources: Source[] = [
 export const workstreams: Workstream[] = [
   {
     id: 'R1',
-    title: 'Workforce & Organization',
-    shortTitle: 'คนและองค์กร',
+    title: 'Workforce & Org',
+    shortTitle: 'Workforce',
     group: 'org',
     what: 'ปรับกำลังคน บทบาท JD/KPI และเส้นทางอาชีพ ให้ตรงกับงานแบบ Media Tech',
     why: 'องค์กรต้องส่งมอบงานได้ก่อน และการเปลี่ยนคนต้องไม่ทำให้ความรู้สำคัญหาย',
@@ -230,7 +230,7 @@ export const workstreams: Workstream[] = [
   {
     id: 'R2',
     title: 'Support Workflow',
-    shortTitle: 'งาน Support',
+    shortTitle: 'Support',
     group: 'org',
     what: 'ปรับงาน Support, KPI และสายอนุมัติ โดยใช้ AI ช่วยในส่วนที่เลือกเป็น Pilot',
     why: 'ลดงานซ้ำและเวลาอนุมัติ — ต่อยอดงาน AI ตรวจเอกสารบัญชีที่มีอยู่แล้ว ไม่เริ่มจากศูนย์',
@@ -247,7 +247,7 @@ export const workstreams: Workstream[] = [
   {
     id: 'R3',
     title: 'IT/BI & Data Foundation',
-    shortTitle: 'ระบบและข้อมูล',
+    shortTitle: 'IT/BI & Data',
     group: 'foundation',
     what: 'กำหนดขอบเขต IT/BI ผู้ดูแล/ผู้สำรอง สิทธิข้อมูล และข้อมูลขั้นต่ำที่ Wave 1 ต้องใช้',
     why: 'ลดการพึ่งบุคคลเดียว และให้ทุก Pilot ใช้ข้อมูลที่มีสิทธิและคุณภาพพอ',
@@ -263,7 +263,7 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R4',
-    title: 'Content Archive / CMS + AI',
+    title: 'Content Archive + AI',
     shortTitle: 'Content',
     group: 'business',
     what: 'ทำคลังเดิมให้ค้นหา/ใช้ซ้ำได้ และทดลอง AI Draft ที่มีคนตรวจก่อนเข้า CMS',
@@ -283,7 +283,7 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R5',
-    title: 'Audience Data / 4C Community',
+    title: 'Audience & Community',
     shortTitle: 'Community',
     group: 'business',
     what: 'ออกแบบ Community และกิจกรรมที่วัด Conversion ได้ พร้อมสิทธิการใช้ข้อมูล',
@@ -307,7 +307,7 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R6',
-    title: 'Government Intelligent Agency',
+    title: 'Government Intelligence',
     shortTitle: 'Government',
     group: 'business',
     what: 'ให้ Sales ทำงานแบบ AE โดยมี Intelligence ช่วยคัดกรองงาน Government',
@@ -327,7 +327,7 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R7',
-    title: 'Local Network / Southern Pilot',
+    title: 'Local Network',
     shortTitle: 'Local',
     group: 'business',
     what: 'เตรียม Business case เครือข่ายข่าวจังหวัด เริ่มทดลองปัตตานี–ยะลา–นราธิวาส หากอนุมัติ',
@@ -351,7 +351,7 @@ export const supportTeamNote = 'ทีมสนับสนุนที่บั
 
 export const milestones: Milestone[] = [
   {
-    id: 'M0', date: '2026-09-30', label: 'ส่งร่าง',
+    id: 'M0', date: '2026-09-30', label: 'Draft',
     deliverables: 'กรอบงาน เจ้าของ ร่าง Roadmap และคำถามขออนุมัติ',
     acceptance: 'การส่งไม่เท่ากับการอนุมัติ',
     owner: 'Mac', approver: 'คุณฉาย',
@@ -360,7 +360,7 @@ export const milestones: Milestone[] = [
     sourceRefs: [{ source: 'S23', sections: '§32', note: 'ให้ Mac ตกผลึกแผนประมาณหนึ่งสัปดาห์' }, { source: 'E01', note: 'M0 ในร่าง v0.1' }],
   },
   {
-    id: 'M1', date: '2026-10-01', label: 'ทบทวนระบบ',
+    id: 'M1', date: '2026-10-01', label: 'System Review',
     deliverables: 'ทบทวนสิ่งที่มี ใช้ต่อได้ ข้อจำกัดและช่องว่าง; ยืนยัน Agenda กับทีม',
     acceptance: 'เห็นภาพระบบที่มีอยู่จริงและช่องว่างก่อนล็อก Scope',
     owner: 'Mac + IT/BI + ทีมนำเสนอ', approver: 'คุณฉาย',
@@ -369,7 +369,7 @@ export const milestones: Milestone[] = [
     sourceRefs: [{ source: 'S23', sections: '§14', note: 'มีการนำเสนอวันที่ 1 ต.ค.' }],
   },
   {
-    id: 'M2', date: '2026-10-09', label: 'ล็อก Scope',
+    id: 'M2', date: '2026-10-09', label: 'Scope Lock',
     deliverables: 'ยืนยัน Scope Reform, Owner, อำนาจ, งบ, ทีม, Baseline และเลือก 2–3 Pilot',
     acceptance: 'มีรายชื่อเจ้าของ ทรัพยากร และรายการ Pilot ที่เลือกเป็นลายลักษณ์อักษร',
     owner: 'Mac + HR + Finance + เจ้าของงาน', approver: 'คุณฉาย',
@@ -378,7 +378,7 @@ export const milestones: Milestone[] = [
     sourceRefs: [{ source: 'E01', note: 'M2 และการเลือก 2–3 Pilot จาก 4 Candidate' }],
   },
   {
-    id: 'M3', date: '2026-10-23', label: 'รับรองแบบงาน',
+    id: 'M3', date: '2026-10-23', label: 'Design Sign-off',
     deliverables: 'Workflow เป้าหมาย บทบาท/JD/KPI แผนความรู้ สิทธิข้อมูล และแบบระบบเฉพาะที่เลือก',
     acceptance: 'เจ้าของงานรับรองแบบงานของตน',
     owner: 'HR + เจ้าของงาน + Mac/IT/BI', approver: 'คุณฉายและเจ้าของงาน',
@@ -387,7 +387,7 @@ export const milestones: Milestone[] = [
     sourceRefs: [{ source: 'E01', note: 'M3 ในร่าง v0.1' }],
   },
   {
-    id: 'M4', date: '2026-11-13', label: 'ทดสอบผ่าน',
+    id: 'M4', date: '2026-11-13', label: 'Test Pass',
     deliverables: 'เจ้าของ Pilot ที่เลือกตรวจรับการทดสอบ คุณภาพ และรายการแก้ไข',
     acceptance: 'ผ่านทดสอบ ≠ เปิดใช้แล้ว; ประเมินเฉพาะ Pilot ที่ได้รับเลือก',
     owner: 'เจ้าของ Pilot + IT/BI', approver: 'เจ้าของงาน',
@@ -396,7 +396,7 @@ export const milestones: Milestone[] = [
     sourceRefs: [{ source: 'E01', note: 'เกณฑ์เปิดใช้/วัดผล' }],
   },
   {
-    id: 'M5', date: '2026-12-04', label: 'เปิดใช้ Wave 1',
+    id: 'M5', date: '2026-12-04', label: 'Wave 1 Go-live',
     deliverables: 'ผ่านทดสอบ สิทธิข้อมูล ความพร้อมผู้ใช้/ผู้ดูแล และแผนสำรอง',
     acceptance: 'เปลี่ยนคนเฉพาะที่มีการอนุมัติและรับช่วงพร้อม',
     owner: 'เจ้าของงาน + HR + IT/BI', approver: 'ผู้มีอำนาจตามเรื่อง',
@@ -405,7 +405,7 @@ export const milestones: Milestone[] = [
     sourceRefs: [{ source: 'E01', note: 'เกณฑ์เปิดใช้' }],
   },
   {
-    id: 'M6', date: '2026-12-18', label: 'ตรวจผล',
+    id: 'M6', date: '2026-12-18', label: 'Result Review',
     deliverables: 'ผลก่อน–หลังและการใช้จริง; Finance ตรวจผลต้นทุน; งานค้างมีเจ้าของ/วันแก้',
     acceptance: 'ผลวัดจาก Baseline ที่ล็อกไว้ที่ M2 ไม่ใช่ตัวเลขประมาณการ',
     owner: 'Mac + Finance + HR + เจ้าของงาน', approver: 'คุณฉาย',
@@ -414,7 +414,7 @@ export const milestones: Milestone[] = [
     sourceRefs: [{ source: 'E01', note: 'เกณฑ์วัดผล' }],
   },
   {
-    id: 'M7', date: '2026-12-31', label: 'ตรวจรับ Reform',
+    id: 'M7', date: '2026-12-31', label: 'Reform Acceptance',
     deliverables: 'ตรวจรับ Scope สิ้นปี ส่งมอบงานประจำ และแผน 2027',
     acceptance: 'งานไม่จบแสดงเป็นข้อยกเว้น — การย้ายไปปีหน้าไม่เท่ากับปิดงาน',
     owner: 'Mac + HR + เจ้าของงาน', approver: 'คุณฉาย',
@@ -427,8 +427,8 @@ export const milestones: Milestone[] = [
 const E01: SourceRef = { source: 'E01', note: 'Work Package และช่วงวันเป็นข้อเสนอจัดลำดับงาน' }
 const pilotCheckpoints: Checkpoint[] = [
   { milestoneId: 'M4', label: 'ทดสอบ', basis: 'proposal' },
-  { milestoneId: 'M5', label: 'เปิดใช้', basis: 'proposal' },
-  { milestoneId: 'M6', label: 'วัดผล', basis: 'proposal' },
+  { milestoneId: 'M5', label: 'Go-live', basis: 'proposal' },
+  { milestoneId: 'M6', label: 'Measure', basis: 'proposal' },
 ]
 const task = (t: Omit<Task, 'actualStart' | 'actualEnd' | 'progressPercent' | 'dateBasis' | 'sourceRefs'> & { sourceRefs?: SourceRef[] }): Task => ({
   dateBasis: 'proposed',
@@ -441,29 +441,29 @@ const task = (t: Omit<Task, 'actualStart' | 'actualEnd' | 'progressPercent' | 'd
 
 export const tasks: Task[] = [
   // R1
-  task({ id: 'T01', workstreamId: 'R1', title: 'งาน–คน–ความรู้', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T01', workstreamId: 'R1', title: 'Baseline: Work–People–Knowledge', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'Baseline งาน–คน–ความรู้สำคัญ ความเสี่ยง และ Scope ที่เสนอ', acceptance: 'ข้อมูลพอให้ M2 ยืนยัน Scope และทรัพยากร', note: 'สำรวจ Baseline/ความเสี่ยง/Scope เพื่อ M2' }),
-  task({ id: 'T02', workstreamId: 'R1', title: 'บทบาท / JD / KPI', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T01', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'รับรองแบบงาน', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T02', workstreamId: 'R1', title: 'Roles / JD / KPI', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T01', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'บทบาท/JD/KPI, Career Path และ Knowledge plan', acceptance: 'รับรอง Workflow/Career Path/Knowledge plan ที่ M3', note: 'ออกแบบคู่กับ Workflow ของ R2' }),
-  task({ id: 'T03', workstreamId: 'R1', title: 'ถ่ายความรู้ → เปลี่ยนผ่าน', start: '2026-10-26', end: '2026-12-31', priority: 'P1', predecessors: ['T02', 'M3'],
+  task({ id: 'T03', workstreamId: 'R1', title: 'Knowledge Transfer → Transition', start: '2026-10-26', end: '2026-12-31', priority: 'P1', predecessors: ['T02', 'M3'],
     checkpoints: [{ milestoneId: 'M5', label: 'เปลี่ยนผ่านเฉพาะที่อนุมัติ', basis: 'proposal' }, { milestoneId: 'M6', label: 'ตรวจช่องว่าง', basis: 'proposal' }, { milestoneId: 'M7', label: 'ตรวจรับ', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'ความรู้/คู่มือ/สิทธิถูกส่งต่อ ผู้รับช่วงฝึกและทดสอบแล้ว', acceptance: 'ผู้รับช่วงทำงานได้ และผู้มีอำนาจอนุมัติการเปลี่ยนผ่าน',
     note: 'ถ่ายความรู้และฝึกก่อน; เปลี่ยนผ่านเมื่อพร้อมและอนุมัติ — ไม่ได้แปลว่าการลดคนเริ่ม 26 ต.ค.' }),
   // R2
-  task({ id: 'T04', workstreamId: 'R2', title: 'สำรวจ Support / AI เดิม', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T04', workstreamId: 'R2', title: 'Support + Existing AI Review', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'แผนที่งาน Support และสภาพงาน AI ตรวจเอกสารบัญชีเดิม', acceptance: 'เห็นสิ่งที่ใช้ต่อได้ก่อนเลือก Pilot', note: 'ตรวจงานตรวจเอกสารบัญชีเดิม ไม่ถือว่าเริ่มจากศูนย์' }),
-  task({ id: 'T05', workstreamId: 'R2', title: 'ออกแบบ Workflow', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T04', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'รับรองแบบงาน', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T05', workstreamId: 'R2', title: 'Workflow Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T04', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'วิธีทำงาน ข้อยกเว้น และเกณฑ์คุณภาพ', acceptance: 'เจ้าของ Workflow รับรองที่ M3', note: 'วิธีทำงาน/ข้อยกเว้น/เกณฑ์คุณภาพเพื่อ M3' }),
   task({ id: 'T06', workstreamId: 'R2', title: 'AI Support Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T05', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C1',
     deliverable: 'Workflow ที่เลือกใช้ AI ช่วย พร้อมผู้อนุมัติและวิธีทำงานสำรอง', acceptance: 'เวลา/ข้อผิดพลาด/ข้อยกเว้น ตรวจโดยผู้อนุมัติงาน', note: 'Build → Test → Prepare → Live → Measure; ทำเมื่อ C1 ได้รับเลือกที่ M2' }),
   // R3
-  task({ id: 'T07', workstreamId: 'R3', title: 'ระบบ / สิทธิ / ผู้สำรอง', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T07', workstreamId: 'R3', title: 'Systems / Access / Backup', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'Inventory ระบบ, Access, คนดูแล/สำรอง และสภาพระบบจริง', acceptance: 'ข้อมูลพอให้ M1/M2 ตัดสินใจ', note: 'Inventory, Access, คนดูแล/สำรอง, สภาพระบบจริง' }),
-  task({ id: 'T08', workstreamId: 'R3', title: 'แบบระบบและข้อมูล', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T07', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'รับรองแบบงาน', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T08', workstreamId: 'R3', title: 'System & Data Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T07', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'แบบเชื่อมและข้อมูลขั้นต่ำเฉพาะ Scope ที่เลือก', acceptance: 'รับรองที่ M3 — ไม่ออกแบบทุกระบบใหม่', note: 'รองรับเฉพาะ Scope ที่เลือก ไม่ออกแบบทุกระบบใหม่' }),
-  task({ id: 'T09', workstreamId: 'R3', title: 'เชื่อม Wave 1 / ส่งมอบ', start: '2026-10-26', end: '2026-12-31', priority: 'P1', predecessors: ['T08', 'M3'],
+  task({ id: 'T09', workstreamId: 'R3', title: 'Wave 1 Integration / Handover', start: '2026-10-26', end: '2026-12-31', priority: 'P1', predecessors: ['T08', 'M3'],
     checkpoints: [
-      { date: '2026-11-06', label: 'ข้อมูลขั้นต่ำ — เสนอ', basis: 'proposal' },
+      { date: '2026-11-06', label: 'Minimum Data', basis: 'proposal' },
       { milestoneId: 'M4', label: 'ทดสอบ', basis: 'proposal' },
       { milestoneId: 'M5', label: 'ใช้จริง', basis: 'proposal' },
       { milestoneId: 'M7', label: 'ส่งมอบการดูแล', basis: 'proposal' },
@@ -471,32 +471,32 @@ export const tasks: Task[] = [
     deliverable: 'ข้อมูลขั้นต่ำและการเชื่อมที่ Pilot ที่เลือกต้องใช้ พร้อมส่งมอบการดูแล', acceptance: 'สิทธิ/คุณภาพข้อมูลผ่านเกณฑ์; ผู้ดูแลรับช่วงได้',
     note: 'ส่งข้อมูลขั้นต่ำระหว่างทาง — Pilot ไม่ต้องรอถึง 31 ธ.ค.' }),
   // R4
-  task({ id: 'T10', workstreamId: 'R4', title: 'คลัง / สิทธิ / โจทย์ใช้', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T10', workstreamId: 'R4', title: 'Archive / Rights / Use Cases', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'Inventory คลัง, ชุดทดลองที่เป็นไปได้ และ Editorial owner', acceptance: 'มีชุดที่สิทธิชัดพอให้เลือกที่ M2', note: 'หา Inventory/ชุดทดลองและ Editorial owner' }),
-  task({ id: 'T11', workstreamId: 'R4', title: 'ชุดทดลอง / แบบ CMS', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T10', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'รับรองแบบงาน', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T11', workstreamId: 'R4', title: 'Pilot Set / CMS Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T10', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'Scope Archive/การช่วยร่างที่เลือก และคนตรวจ', acceptance: 'Editorial รับรองที่ M3', note: 'Scope Archive/การช่วยร่างที่เลือก และคนตรวจ' }),
   task({ id: 'T12', workstreamId: 'R4', title: 'Content Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T11', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C3',
     deliverable: 'คลังตัวอย่างที่ค้นหา/ใช้ซ้ำได้ และ/หรือ AI Draft → คนตรวจ → CMS', acceptance: 'ค้นหาได้ มีแหล่งที่มา คนตรวจ และใช้กับ Workflow ได้', note: 'Build → Test → Prepare → Live → Measure; ทำเมื่อ C3 ได้รับเลือกที่ M2' }),
   // R5
-  task({ id: 'T13', workstreamId: 'R5', title: 'Community / ฐานเดิม', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T13', workstreamId: 'R5', title: 'Community / Existing Base', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'Owner, สมาชิกเดิม และกิจกรรมที่เป็นไปได้', acceptance: 'มีตัวเลือกพอให้ M2 ตัดสินใจ — ไม่กำหนดแบรนด์นำร่องเอง', note: 'Owner/สมาชิกเดิม/กิจกรรมที่เป็นไปได้; ไม่กำหนดแบรนด์นำร่องเอง' }),
-  task({ id: 'T14', workstreamId: 'R5', title: 'กิจกรรม / Conversion', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T13', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'รับรองแบบงาน', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T14', workstreamId: 'R5', title: 'Event / Conversion Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T13', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'แผนคุณค่าสมาชิก นิยามตัววัด และสิทธิข้อมูล', acceptance: 'เจ้าของแบรนด์รับรองนิยาม Conversion ที่ M3', note: 'แผนคุณค่าสมาชิก นิยามตัววัดและสิทธิข้อมูล' }),
   task({ id: 'T15', workstreamId: 'R5', title: 'Audience Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T14', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C4',
     deliverable: 'หนึ่งกิจกรรมหรือแบรนด์: ลงทะเบียน → เข้าร่วม → ติดตาม', acceptance: 'Conversion ตามนิยามที่รับรอง; ถ้าไม่มี Event จริงรายงานเป็น Sandbox', note: 'ยังไม่มี Event date; ทำเมื่อ C4 ได้รับเลือกที่ M2' }),
   // R6
-  task({ id: 'T16', workstreamId: 'R6', title: 'คัดกรองงาน Government', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T16', workstreamId: 'R6', title: 'Gov Lead Screening', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'แหล่งงาน/งบ/ความเหมาะสมที่ตรวจสอบได้', acceptance: 'แต่ละรายการมีที่มาตรวจสอบได้', note: 'แหล่งงาน/งบ/ความเหมาะสมที่ตรวจสอบได้' }),
-  task({ id: 'T17', workstreamId: 'R6', title: 'AE / Screening / QC', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T16', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'รับรองแบบงาน', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T17', workstreamId: 'R6', title: 'AE / Screening / QC', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T16', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'AE Owner, Workflow การติดตาม และผู้ดูแล Intelligence', acceptance: 'ทีม Government รับรองที่ M3', note: 'AE Owner/Workflow/การติดตาม และผู้ดูแล Intelligence' }),
   task({ id: 'T18', workstreamId: 'R6', title: 'Government Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T17', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C2',
     deliverable: 'งานที่ตรวจสอบได้ → Screening → มอบหมาย AE → ติดตาม', acceptance: 'โอกาสที่ผ่าน QC และมีการติดตามจริง — Pipeline ไม่ใช่รายได้', note: 'ไม่ต้องรอ Nation ID / Audience ID; ทำเมื่อ C2 ได้รับเลือกที่ M2' }),
   // R7
-  task({ id: 'T19', workstreamId: 'R7', title: 'ต้นทุน / รายได้ / เพจ', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T19', workstreamId: 'R7', title: 'Cost / Revenue / Page Rights', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'ต้นทุนครบ (รวมค่าเซลส์) สิทธิในเพจ และบทบาท', acceptance: 'ไม่มีต้นทุนที่ตกหล่นก่อนทำ Business case', note: 'เก็บต้นทุนครบ รวมค่าเซลส์ สิทธิและบทบาท' }),
-  task({ id: 'T20', workstreamId: 'R7', title: 'QC / ทีม / ขออนุมัติ', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T19', 'M2'], checkpoints: [], conditionalOn: null,
+  task({ id: 'T20', workstreamId: 'R7', title: 'QC / Team / Approval', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T19', 'M2'], checkpoints: [], conditionalOn: null,
     deliverable: 'Business case และเงื่อนไขเริ่ม Pilot', acceptance: 'เจ้าของธุรกิจเสนอขออนุมัติพร้อมต้นทุน/ทีม/สิทธิ/QC', note: 'Business case และเงื่อนไขเริ่ม Pilot โดยเจ้าของธุรกิจ' }),
-  task({ id: 'T21', workstreamId: 'R7', title: 'ทดลองพื้นที่ หากอนุมัติ', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T20'], checkpoints: [], conditionalOn: 'LOCAL_APPROVAL',
+  task({ id: 'T21', workstreamId: 'R7', title: 'Local Pilot (if approved)', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T20'], checkpoints: [], conditionalOn: 'LOCAL_APPROVAL',
     deliverable: 'Pilot ปัตตานี–ยะลา–นราธิวาส และผลประเมินต้นทุน/รายได้จริง', acceptance: 'ประเมินรายได้จริงก่อนตัดสินใจขยาย', note: 'อนุมัติธุรกิจแยก; วันเริ่มจริงรอยืนยัน; ไม่ขึ้นกับ M4/M5 ของ AI' }),
 ]
 
@@ -512,32 +512,32 @@ export const relations: Relation[] = [
 
 export const priorities: Priority[] = [
   {
-    id: 'P0', label: 'ปลดล็อกก่อน',
+    id: 'P0', label: 'Unblock',
     scope: 'Scope/Owner/อำนาจ/งบ; สำรวจงาน ระบบ ข้อมูล และความรู้สำคัญ; เริ่มเตรียมทั้ง 7 งานคู่ขนาน',
     reason: 'ยังตัดสินใจสร้าง/เปลี่ยนทีมไม่ได้จากข้อมูลไม่ครบ',
     exitCondition: 'M2 ยืนยัน Scope ทรัพยากร Baseline และรายการ Pilot',
-    items: ['Scope / Owner / อำนาจ / งบ', 'สำรวจงาน–ระบบ–ข้อมูล–ความรู้', 'เตรียมทั้ง 7 งานคู่ขนาน'],
+    items: ['Scope · Owner · Budget', 'Baseline Survey', '7 Workstreams Kick-off'],
   },
   {
-    id: 'P1', label: 'งานหลักที่ต้องเดิน',
+    id: 'P1', label: 'Core Work',
     scope: 'Workforce/Workflow/JD/KPI; ถ่ายความรู้; IT/BI และ Data ขั้นต่ำ; วางแผนธุรกิจ Community/AE/Local โดยเจ้าของฝ่าย',
     reason: 'ทำให้องค์กรส่งมอบงานได้ และเตรียมฐานสำหรับธุรกิจ',
     exitCondition: 'M3 รับรองแบบงาน; เปลี่ยนผ่านเฉพาะส่วนที่พร้อมตาม Gate',
-    items: ['Workforce / Workflow / JD / KPI', 'ถ่ายความรู้', 'IT/BI + Data ขั้นต่ำ', 'แผนธุรกิจ Community / AE / Local'],
+    items: ['Workforce · JD/KPI', 'Knowledge Transfer', 'Minimum Data', 'Business Plans'],
   },
   {
-    id: 'P2', label: 'เลือกทดลองคู่ขนาน',
+    id: 'P2', label: 'Parallel Pilots',
     scope: 'เลือก 2–3 จาก C1–C4; Local Pilot เป็นงานธุรกิจคู่ขนานที่อนุมัติแยก ไม่กินโควตา AI Pilot โดยอัตโนมัติ',
     reason: 'พิสูจน์การใช้งานและผล ก่อนลงทุนขยาย',
     exitCondition: 'M4 ทดสอบ → M5 ใช้จริง → M6 วัดผล; Local ใช้ Gate ธุรกิจของตน',
     items: [],
   },
   {
-    id: 'P3', label: 'ขยายเมื่อพิสูจน์',
+    id: 'P3', label: 'Scale Later',
     scope: 'ระบบทั้งกลุ่ม, Archive ทั้งหมด, Communities เพิ่ม, เครือข่ายครบประเทศ และ App เต็มรูปแบบ',
     reason: 'ยังไม่มี Scope/งบ/ทีม/วันเปิดใช้ที่ยืนยันครบ',
     exitCondition: 'ตัดสินใจจากผล Pilot; ยังไม่กำหนดวันผูกพัน',
-    items: ['ระบบทั้งกลุ่ม', 'Archive ทั้งหมด', 'Communities เพิ่ม', 'เครือข่ายครบประเทศ', 'App เต็มรูปแบบ'],
+    items: ['Group-wide Systems', 'Full Archive', 'More Communities', 'Nationwide Network', 'Full App'],
   },
 ]
 
@@ -556,29 +556,29 @@ export const pilotSelectionCriteria = ['ผลธุรกิจที่ต้�
 
 export const decisions: Decision[] = [
   {
-    id: 'D1', title: 'Scope สิ้นปี',
-    question: 'Reform ครอบคลุมฝ่าย/งานใด และอะไรถือว่าส่งมอบแล้ว',
+    id: 'D1', title: 'Year-end Scope',
+    question: 'Reform ครอบคลุมฝ่ายไหน · อะไรคือ Done',
     why: 'ถ้า Scope ไม่ชัด การตรวจรับ M7 จะวัดไม่ได้',
     conditions: ['รายชื่อฝ่าย/งานใน Scope', 'นิยาม "ส่งมอบแล้ว" ของแต่ละงาน', 'งานที่อยู่นอก Scope ปี 2026'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
   },
   {
-    id: 'D2', title: 'เจ้าของและอำนาจ',
-    question: 'ผู้รับผิดชอบแต่ละงาน ขอบเขต Mac/IT/BI และผู้อนุมัติ',
+    id: 'D2', title: 'Owner & Authority',
+    question: 'Owner รายงาน · ขอบเขต Mac/IT/BI · Approver',
     why: 'ฝ่ายธุรกิจเป็นเจ้าของผลลัพธ์ — Mac เชื่อมแผน ไม่ใช่เจ้าของทุกงาน',
     conditions: ['เจ้าของ R1–R7', 'ขอบเขตและวันรับโอน IT/BI', 'ผู้อนุมัติของแต่ละ Gate'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
   },
   {
-    id: 'D3', title: 'ทีม งบ และ Wave 1',
-    question: 'เลือก 2–3 AI Pilot จากข้อมูลความพร้อม; Local Pilot แยกอนุมัติ',
+    id: 'D3', title: 'Team · Budget · Wave 1',
+    question: 'เลือก 2–3 AI Pilot · Local Pilot อนุมัติแยก',
     why: 'ไม่เริ่มทุกระบบพร้อมกัน — ลงทุนเฉพาะที่พร้อมและพิสูจน์ได้',
     conditions: ['ทีมและงบที่ใช้ได้จริง', 'Pilot 2–3 รายการจาก C1–C4', 'Local Pilot: ต้นทุน/สิทธิในเพจ/QC ก่อนอนุมัติ'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
   },
   {
-    id: 'D4', title: 'Milestones และการตรวจรับ',
-    question: 'ยืนยัน M0–M7 และวิธีตัดสินใจ Go / Adjust / Hold',
+    id: 'D4', title: 'Milestones & Gates',
+    question: 'ยืนยัน M0–M7 · เกณฑ์ Go / Adjust / Hold',
     why: 'ทุกจุดตรวจต้องมีสิ่งส่งมอบและผู้ตัดสิน ไม่ใช่แค่ถึงวันที่',
     conditions: ['วันที่ M0–M7', 'เกณฑ์ Go / Adjust / Hold', 'Weekly Review 30 นาที (ข้อเสนอ)'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
@@ -588,15 +588,15 @@ export const decisions: Decision[] = [
 /** Scene 01 — outcomes. */
 export const outcomes = [
   {
-    id: 'O1', label: 'งานคล่องขึ้น', expands: ['Workforce', 'Workflow', 'JD/KPI', 'Delayer'], workstreams: ['R1', 'R2'] as WorkstreamId[],
+    id: 'O1', label: 'Agile Organization', expands: ['Workforce', 'Workflow', 'JD/KPI', 'Delayer'], workstreams: ['R1', 'R2'] as WorkstreamId[],
     sourceRefs: [{ source: 'S23', sections: '§1–3', note: 'Efficiency/Workforce, Nation House' }] as SourceRef[],
   },
   {
-    id: 'O2', label: 'ข้อมูลเชื่อมกัน', expands: ['Internal System', 'CRM', 'Audience Data', 'Content Archive'], workstreams: ['R3', 'R4', 'R5'] as WorkstreamId[],
+    id: 'O2', label: 'Connected Data', expands: ['Internal System', 'CRM', 'Audience Data', 'Content Archive'], workstreams: ['R3', 'R4', 'R5'] as WorkstreamId[],
     sourceRefs: [{ source: 'S23', sections: '§3, §26', note: 'Nation House, IT–BI' }] as SourceRef[],
   },
   {
-    id: 'O3', label: 'ธุรกิจเติบโต', expands: ['4C / Community', 'Government Intelligent Agency', 'Local Network'], workstreams: ['R5', 'R6', 'R7'] as WorkstreamId[],
+    id: 'O3', label: 'Business Growth', expands: ['4C Community', 'Gov Intelligence', 'Local Network'], workstreams: ['R5', 'R6', 'R7'] as WorkstreamId[],
     sourceRefs: [{ source: 'S23', sections: '§32', note: 'Mac/ทีม/Media Tech' }] as SourceRef[],
   },
 ]
@@ -613,17 +613,17 @@ export const fourC = [
 
 export const valuePaths = [
   {
-    id: 'V1', steps: ['งาน/เอกสาร', 'AI + คนตรวจ', 'Workflow ใหม่'],
+    id: 'V1', steps: ['Docs', 'AI + Human Review', 'New Workflow'],
     proof: 'ลดเวลาและงานซ้ำ โดยตรวจคุณภาพเทียบก่อน–หลัง', workstreamId: 'R2' as WorkstreamId, candidateId: 'C1' as CandidateId,
     sourceRefs: [{ source: 'S23', sections: '§33', note: 'AI ตรวจเอกสารบัญชีเดิม' }] as SourceRef[],
   },
   {
-    id: 'V2', steps: ['งาน Government ที่ตรวจสอบแล้ว', 'Screening/QC', 'AE ติดตาม'],
+    id: 'V2', steps: ['Verified Gov Leads', 'Screening/QC', 'AE Follow-up'],
     proof: 'โอกาสขายที่มีเจ้าของ ไม่ใช่เพียงรายชื่อโครงการ', workstreamId: 'R6' as WorkstreamId, candidateId: 'C2' as CandidateId,
     sourceRefs: [{ source: 'S23', sections: '§4', note: 'Sales/AE/Intelligence' }, { source: 'BSales', note: 'Screening/QC, Revenue Mapping' }] as SourceRef[],
   },
   {
-    id: 'V3', steps: ['ลงทะเบียน', 'เข้าร่วม', 'ติดตามผล'],
+    id: 'V3', steps: ['Register', 'Join', 'Follow-up'],
     proof: 'เห็น Conversion ของกิจกรรม ไม่หยุดที่ยอดผู้ติดตาม', workstreamId: 'R5' as WorkstreamId, candidateId: 'C4' as CandidateId,
     sourceRefs: [{ source: 'S23', sections: '§8, §13', note: '4C, Data' }, { source: 'B4C', note: 'ลำดับ 4C' }] as SourceRef[],
   },
@@ -631,13 +631,13 @@ export const valuePaths = [
 
 export const valueExtras = [
   {
-    id: 'X1', title: 'Content: สองงานที่ไม่ใช่งานเดียว', steps: ['คลังเดิม → ค้นหา/ใช้ซ้ำ', 'AI Draft → คนตรวจ → CMS'],
+    id: 'X1', title: 'Content: Archive ≠ AI Draft', steps: ['คลังเดิม → ค้นหา/ใช้ซ้ำ', 'AI Draft → คนตรวจ → CMS'],
     note: 'เกี่ยวข้องกันแต่แยกการตรวจรับ — คลังต้องมีสิทธิและแหล่งที่มา; AI Draft ต้องมี Editorial ตรวจก่อนเผยแพร่',
     workstreamId: 'R4' as WorkstreamId,
     sourceRefs: [{ source: 'S23', sections: '§29', note: 'CMS' }, { source: 'S17', sections: '§8', note: 'Archive/ค้นหา' }] as SourceRef[],
   },
   {
-    id: 'X2', title: 'Local: ข่าวพื้นที่ + Community → โมเดลรายได้พื้นที่', steps: ['ข่าวพื้นที่ + Community', 'โมเดลรายได้พื้นที่'],
+    id: 'X2', title: 'Local: News + Community → Revenue Model', steps: ['ข่าวพื้นที่ + Community', 'โมเดลรายได้พื้นที่'],
     note: 'ต้องพิสูจน์ต้นทุน สิทธิในเพจ และ QC ก่อนขยาย',
     workstreamId: 'R7' as WorkstreamId,
     sourceRefs: [{ source: 'S23', sections: '§10–12, §16–17', note: 'Local model, Southern pilot, สิทธิในเพจ' }] as SourceRef[],
@@ -650,42 +650,42 @@ export interface DepPath { id: string; title: string; lanes: { label?: string; n
 
 export const dependencyPaths: DepPath[] = [
   {
-    id: 'people', title: 'คนและงาน', usesR3: false,
+    id: 'people', title: 'People & Work', usesR3: false,
     parallel: 'สำรวจคน งาน และระบบพร้อมกัน; การออกแบบไม่ต้องรอสร้างระบบทั้งหมด',
     lanes: [{ nodes: [
-      { id: 'p1', label: 'เข้าใจงาน', ref: { task: 'T01' }, note: 'สำรวจงาน คน และความรู้สำคัญ' },
-      { id: 'p2', label: 'ออกแบบบทบาท/Workflow', ref: { task: 'T02' }, note: 'ออกแบบคนกับงานร่วมกัน (R1 ↔ R2)' },
-      { id: 'p3', label: 'เก็บความรู้/สิทธิ/คู่มือ', ref: { task: 'T03' }, note: 'จุดห้ามข้าม: ความรู้และผู้รับช่วงก่อนเปลี่ยนคน' },
-      { id: 'p4', label: 'ผู้รับช่วงทดสอบ', ref: { task: 'T03' }, note: 'ผู้รับช่วงทำงานจริงได้ก่อนเปลี่ยนผ่าน' },
-      { id: 'p5', label: 'ผู้มีอำนาจอนุมัติ', ref: { milestone: 'M5' }, note: 'ห้ามให้ AI ตัดสินใจบุคลากร' },
-      { id: 'p6', label: 'เปลี่ยนผ่าน', ref: { task: 'T03' }, note: 'เฉพาะส่วนที่พร้อมและได้รับอนุมัติ' },
+      { id: 'p1', label: 'Understand Work', ref: { task: 'T01' }, note: 'สำรวจงาน คน และความรู้สำคัญ' },
+      { id: 'p2', label: 'Role + Workflow Design', ref: { task: 'T02' }, note: 'ออกแบบคนกับงานร่วมกัน (R1 ↔ R2)' },
+      { id: 'p3', label: 'Knowledge / Access / Manual', ref: { task: 'T03' }, note: 'จุดห้ามข้าม: ความรู้และผู้รับช่วงก่อนเปลี่ยนคน' },
+      { id: 'p4', label: 'Successor Test', ref: { task: 'T03' }, note: 'ผู้รับช่วงทำงานจริงได้ก่อนเปลี่ยนผ่าน' },
+      { id: 'p5', label: 'Approval', ref: { milestone: 'M5' }, note: 'ห้ามให้ AI ตัดสินใจบุคลากร' },
+      { id: 'p6', label: 'Transition', ref: { task: 'T03' }, note: 'เฉพาะส่วนที่พร้อมและได้รับอนุมัติ' },
     ] }],
   },
   {
-    id: 'data', title: 'ข้อมูลและ AI', usesR3: true,
+    id: 'data', title: 'Data & AI', usesR3: true,
     parallel: 'พัฒนาต้นแบบด้วยข้อมูลจำลอง/ที่อนุญาตได้; ใช้จริงเมื่อผ่าน Gate',
     lanes: [{ nodes: [
       { id: 'd1', label: 'Scope/Owner', ref: { milestone: 'M2' }, note: 'เลือก Pilot และเจ้าของที่ M2' },
-      { id: 'd2', label: 'สิทธิ/คุณภาพข้อมูล', ref: { task: 'T08' }, note: 'จุดห้ามข้าม: สิทธิข้อมูลก่อนใช้จริง' },
-      { id: 'd3', label: 'ข้อมูลขั้นต่ำ/ต้นแบบ', ref: { task: 'T09' }, note: 'ข้อมูลขั้นต่ำเสนอพร้อม 6 พ.ย.' },
-      { id: 'd4', label: 'คนทดสอบ', ref: { milestone: 'M4' }, note: 'จุดห้ามข้าม: คนตรวจ AI ก่อนเผยแพร่' },
-      { id: 'd5', label: 'เปิดใช้', ref: { milestone: 'M5' }, note: 'ผ่านทดสอบ สิทธิ ผู้ดูแล และแผนสำรอง' },
-      { id: 'd6', label: 'วัดผล', ref: { milestone: 'M6' }, note: 'เทียบ Baseline — เวลา ≠ เงินสดที่ประหยัดแล้ว' },
+      { id: 'd2', label: 'Data Rights & Quality', ref: { task: 'T08' }, note: 'จุดห้ามข้าม: สิทธิข้อมูลก่อนใช้จริง' },
+      { id: 'd3', label: 'Minimum Data / Prototype', ref: { task: 'T09' }, note: 'ข้อมูลขั้นต่ำเสนอพร้อม 6 พ.ย.' },
+      { id: 'd4', label: 'User Test', ref: { milestone: 'M4' }, note: 'จุดห้ามข้าม: คนตรวจ AI ก่อนเผยแพร่' },
+      { id: 'd5', label: 'Go-live', ref: { milestone: 'M5' }, note: 'ผ่านทดสอบ สิทธิ ผู้ดูแล และแผนสำรอง' },
+      { id: 'd6', label: 'Measure', ref: { milestone: 'M6' }, note: 'เทียบ Baseline — เวลา ≠ เงินสดที่ประหยัดแล้ว' },
     ] }],
   },
   {
-    id: 'business', title: 'ธุรกิจ', usesR3: true,
+    id: 'business', title: 'Business', usesR3: true,
     parallel: 'Government ไม่ต้องรอ Audience ID; Community Planning เริ่มก่อน Platform เต็มรูปแบบได้',
     lanes: [
       { label: 'Government', nodes: [
-        { id: 'g1', label: 'งานที่ตรวจสอบ', ref: { task: 'T16' }, note: 'แหล่งงาน/งบ/ความเหมาะสมตรวจสอบได้' },
+        { id: 'g1', label: 'Verified Leads', ref: { task: 'T16' }, note: 'แหล่งงาน/งบ/ความเหมาะสมตรวจสอบได้' },
         { id: 'g2', label: 'Screening/QC', ref: { task: 'T17' }, note: 'คัดความเหมาะสมก่อนมอบหมาย' },
         { id: 'g3', label: 'AE', ref: { task: 'T17' }, note: 'มี AE Owner ต่อโอกาส — AI ไม่ยื่นข้อเสนอผูกพันเอง' },
-        { id: 'g4', label: 'ติดตาม', ref: { task: 'T18' }, note: 'สถานะจริงของแต่ละโอกาส — Pipeline ≠ รายได้' },
+        { id: 'g4', label: 'Follow-up', ref: { task: 'T18' }, note: 'สถานะจริงของแต่ละโอกาส — Pipeline ≠ รายได้' },
       ] },
       { label: 'Community', nodes: [
-        { id: 'c1', label: 'ประโยชน์สมาชิก + แผนกิจกรรม + สิทธิข้อมูล', ref: { task: 'T14' }, note: 'วางแผนได้ก่อน Platform เต็มรูปแบบ' },
-        { id: 'c2', label: 'กิจกรรม', ref: { task: 'T15' }, note: 'ยังไม่มี Event date ที่ยืนยัน' },
+        { id: 'c1', label: 'Member Value + Event Plan + Data Rights', ref: { task: 'T14' }, note: 'วางแผนได้ก่อน Platform เต็มรูปแบบ' },
+        { id: 'c2', label: 'Event', ref: { task: 'T15' }, note: 'ยังไม่มี Event date ที่ยืนยัน' },
         { id: 'c3', label: 'Conversion', ref: { task: 'T15' }, note: 'ตามนิยามที่รับรอง; ไม่มี Event จริง = Sandbox' },
       ] },
     ],
@@ -694,11 +694,11 @@ export const dependencyPaths: DepPath[] = [
     id: 'local', title: 'Local', usesR3: false,
     parallel: 'เตรียม Local คู่ขนานได้ ไม่บังคับรอ AI ทั้ง 4 Pilot',
     lanes: [{ nodes: [
-      { id: 'l1', label: 'ต้นทุนครบ + สิทธิในเพจ + ทีม/QC', ref: { task: 'T19' }, note: 'จุดห้ามข้าม: ต้นทุน/สิทธิ/QC ก่อนเปิด Pilot' },
-      { id: 'l2', label: 'อนุมัติธุรกิจ', ref: { task: 'T20' }, note: 'อำนาจอนุมัติธุรกิจ/งบรอยืนยัน' },
-      { id: 'l3', label: 'Pilot 3 จังหวัด', ref: { task: 'T21' }, note: 'ปัตตานี–ยะลา–นราธิวาส หากอนุมัติ; วันเริ่มจริงรอยืนยัน' },
-      { id: 'l4', label: 'ประเมิน', ref: { task: 'T21' }, note: 'ต้นทุน/รายได้จริง' },
-      { id: 'l5', label: 'ตัดสินใจขยาย', ref: { workstream: 'R7' }, note: 'ระยะ P3 — ยังไม่กำหนดวัน' },
+      { id: 'l1', label: 'Full Cost + Page Rights + QC', ref: { task: 'T19' }, note: 'จุดห้ามข้าม: ต้นทุน/สิทธิ/QC ก่อนเปิด Pilot' },
+      { id: 'l2', label: 'Business Approval', ref: { task: 'T20' }, note: 'อำนาจอนุมัติธุรกิจ/งบรอยืนยัน' },
+      { id: 'l3', label: 'Pilot 3 Provinces', ref: { task: 'T21' }, note: 'ปัตตานี–ยะลา–นราธิวาส หากอนุมัติ; วันเริ่มจริงรอยืนยัน' },
+      { id: 'l4', label: 'Evaluate', ref: { task: 'T21' }, note: 'ต้นทุน/รายได้จริง' },
+      { id: 'l5', label: 'Scale Decision', ref: { workstream: 'R7' }, note: 'ระยะ P3 — ยังไม่กำหนดวัน' },
     ] }],
   },
 ]
@@ -714,36 +714,36 @@ export const noSkipRules = [
 /** Scene 07 — year-end checkpoints. */
 export const yearEndCheckpoints = [
   {
-    id: 'K1', title: 'องค์กรพร้อมทำงาน',
-    summary: 'โครงสร้าง/บทบาท/JD/KPI ใน Scope ที่อนุมัติ และถ่ายความรู้/รับช่วงแล้ว',
+    id: 'K1', title: 'Org Ready',
+    summary: 'Roles · JD/KPI · Knowledge Transfer ใน Scope ที่อนุมัติ',
     evidence: ['บทบาท/JD/KPI ที่เจ้าของงานรับรอง', 'บันทึกการถ่ายความรู้และผลทดสอบผู้รับช่วง', 'การอนุมัติการเปลี่ยนผ่านโดยผู้มีอำนาจ'],
     milestones: ['M3', 'M5', 'M7'] as MilestoneId[], workstreams: ['R1', 'R2'] as WorkstreamId[],
   },
   {
-    id: 'K2', title: 'Wave 1 ใช้จริง',
-    summary: 'Workflow ที่เลือกผ่านทดสอบ มีผู้ใช้ ผู้ดูแล และวิธีทำงานสำรอง',
+    id: 'K2', title: 'Wave 1 Live',
+    summary: 'Pilot ผ่าน Test · มี User · Owner · Backup Plan',
     evidence: ['ผลทดสอบที่เจ้าของ Pilot ตรวจรับ', 'รายชื่อผู้ใช้และผู้ดูแล', 'แผนสำรองเมื่อระบบใช้ไม่ได้'],
     milestones: ['M4', 'M5'] as MilestoneId[], workstreams: ['R2', 'R3', 'R4', 'R5', 'R6'] as WorkstreamId[],
   },
   {
-    id: 'K3', title: 'วัดผลและส่งมอบ',
-    summary: 'ผลก่อน–หลังที่ตรวจรับได้ พร้อมงานค้างและแผนปี 2027',
+    id: 'K3', title: 'Measured & Handed Over',
+    summary: 'Before/After Result · Backlog · Plan 2027',
     evidence: ['ผลเทียบ Baseline ที่ล็อกไว้', 'Finance ตรวจผลต้นทุน', 'รายการงานค้างพร้อมเจ้าของ/วันแก้ และแผน 2027'],
     milestones: ['M6', 'M7'] as MilestoneId[], workstreams: ['R3'] as WorkstreamId[],
   },
 ]
 
 export const notEqual = [
-  ['เวลา', 'เงินสดที่ประหยัดแล้ว'],
-  ['Pipeline', 'รายได้'],
-  ['Sandbox', 'ผลธุรกิจจริง'],
+  ['Time Saved', 'Cash Saved'],
+  ['Pipeline', 'Revenue'],
+  ['Sandbox', 'Real Result'],
 ]
 
 export const responsibility = [
-  { who: 'คุณฉาย', role: 'อนุมัติ' },
-  { who: 'Mac', role: 'เชื่อมแผน' },
-  { who: 'เจ้าของฝ่าย', role: 'ส่งมอบผล' },
-  { who: 'ทีม IT/BI', role: 'ระบบและข้อมูล' },
+  { who: 'คุณฉาย', role: 'Approve' },
+  { who: 'Mac', role: 'Integrate' },
+  { who: 'BU Owners', role: 'Deliver' },
+  { who: 'IT/BI', role: 'System & Data' },
 ]
 
 export const weeklyReview = {
@@ -753,13 +753,13 @@ export const weeklyReview = {
 
 /** Scene 08 — next steps use milestone ids (dates come from `milestones`). */
 export const nextSteps: { milestoneId: MilestoneId; label: string }[] = [
-  { milestoneId: 'M0', label: 'ส่งร่าง' },
-  { milestoneId: 'M1', label: 'ทบทวนระบบ' },
-  { milestoneId: 'M2', label: 'ยืนยัน Scope / ทีม / งบ' },
+  { milestoneId: 'M0', label: 'Draft' },
+  { milestoneId: 'M1', label: 'System Review' },
+  { milestoneId: 'M2', label: 'Scope · Team · Budget' },
 ]
 
 /** Proposed in-bar marker that is intentionally NOT a milestone (no M8). */
-export const minimumDataMarker = { taskId: 'T09', date: '2026-11-06', label: 'ข้อมูลขั้นต่ำ — เสนอ' }
+export const minimumDataMarker = { taskId: 'T09', date: '2026-11-06', label: 'Minimum Data' }
 
 // ---------------------------------------------------------------------------
 // Lookups

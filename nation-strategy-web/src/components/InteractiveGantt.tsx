@@ -7,6 +7,7 @@ import {
 import { dayNumber, fmtDate, fmtRange, isoFromDay, monthShort } from '../lib/dates'
 import { relatedTo } from '../lib/graph'
 import { SceneShell } from './SceneShell'
+import { Icon, WS_ICON } from './Icon'
 
 // Chart domain: Monday before the roadmap start → day after the roadmap end.
 const DOMAIN_START = dayNumber('2026-09-21')
@@ -14,19 +15,19 @@ const DOMAIN_END = dayNumber(meta.timelineEnd) + 1
 const DAYS = DOMAIN_END - DOMAIN_START
 
 type Zoom = 'overview' | 'month' | 'week'
-const ZOOM_LABEL: Record<Zoom, string> = { overview: 'ภาพรวม', month: 'รายเดือน', week: 'รายสัปดาห์' }
+const ZOOM_LABEL: Record<Zoom, string> = { overview: 'Overview', month: 'Month', week: 'Week' }
 type CandFilter = 'all' | CandidateId | 'LOCAL'
 
 const WS_ROW = 58
 const TASK_ROW = 50
 const CHIP_H = 28
-const MS_HEADER = CHIP_H * 2 + 22
 
 let measureCtx: CanvasRenderingContext2D | null = null
-function textWidth(s: string, font = '600 13px system-ui, sans-serif') {
+/** Measures with the page's real font stack so labels never get clipped. */
+function textWidth(s: string, weight = 700) {
   if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d')
-  if (!measureCtx) return s.length * 7.5
-  measureCtx.font = font
+  if (!measureCtx) return s.length * 8
+  measureCtx.font = `${weight} 13px ${getComputedStyle(document.body).fontFamily}`
   return measureCtx.measureText(s).width
 }
 
@@ -36,8 +37,8 @@ function isCandidate(t: Task) { return !!t.conditionalOn && t.conditionalOn !== 
 function isLocal(t: Task) { return t.conditionalOn === 'LOCAL_APPROVAL' }
 
 function barLabel(t: Task) {
-  if (isCandidate(t)) return `${t.title} · Candidate / รอเลือกที่ M2`
-  if (isLocal(t)) return `${t.title} · วันเริ่มจริงรอยืนยัน`
+  if (isCandidate(t)) return `${t.title} · Candidate (เลือกที่ M2)`
+  if (isLocal(t)) return `${t.title} · Start TBC`
   return t.title
 }
 
@@ -177,24 +178,29 @@ export function InteractiveGantt() {
   // ---- milestone label placement (no overlapping hit targets) --------------
   const chips = useMemo(() => {
     const gap = 4
-    const lastRight = [-Infinity, -Infinity]
-    return milestones.map((m) => {
+    const MAX_LEVELS = 4
+    const lastRight: number[] = []
+    const placed = milestones.map((m) => {
       const x = xMid(m.date)
       const text = narrow || pxPerDay < 6 ? m.id : `${m.id} ${m.label}`
-      const w = Math.ceil(textWidth(text)) + 18
+      const w = Math.ceil(textWidth(text)) + 22
       let left = Math.min(Math.max(2, x - w / 2), chartW - w - 2)
-      let lane = 1
-      if (left >= lastRight[1] + gap) lane = 1
-      else if (left >= lastRight[0] + gap) lane = 0
-      else {
-        lane = lastRight[0] <= lastRight[1] ? 0 : 1
-        left = lastRight[lane] + gap
+      // Lowest free label row first (row 0 sits right above the diamonds).
+      let level = 0
+      while (level < MAX_LEVELS && left < (lastRight[level] ?? -Infinity) + gap) level++
+      if (level === MAX_LEVELS) {
+        level = lastRight.indexOf(Math.min(...lastRight))
+        left = Math.min(lastRight[level] + gap, chartW - w - 2)
       }
-      lastRight[lane] = left + w
-      return { m, x, left, w, lane, text }
+      lastRight[level] = left + w
+      return { m, x, left, w, level, text }
     })
+    const levels = Math.max(2, lastRight.length)
+    return placed.map((c) => ({ ...c, lane: levels - 1 - c.level, levels }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pxPerDay, chartW, narrow])
+
+  const MS_HEADER = chips[0].levels * CHIP_H + 22
 
   // ---- geometry for edges --------------------------------------------------
   const rowOfTask = (id: string) => rows.find((r) => r.key === id) ?? rows.find((r) => r.type === 'ws' && r.ws === taskById[id]?.workstreamId)
@@ -253,7 +259,7 @@ export function InteractiveGantt() {
     const left = xOf(t.start)
     const width = xOf(t.end) + pxPerDay - left
     const label = `${t.id} ${inSummary ? t.title : barLabel(t)}`
-    const fits = textWidth(label, '600 13px system-ui, sans-serif') + 16 < width
+    const fits = textWidth(label, 600) + 16 < width
     const cls = [
       'bar', `bar-${t.priority.toLowerCase()}`,
       isCandidate(t) ? 'bar-cand' : '', isLocal(t) ? 'bar-local' : '',
@@ -288,21 +294,21 @@ export function InteractiveGantt() {
     <SceneShell
       id="timeline"
       wide
-      headline="กันยายน–ธันวาคม: จากแผนสู่การใช้งานจริง"
+      headline="Timeline ก.ย.–ธ.ค. 2026"
       badges={['proposal', 'meeting']}
-      intro={<p className="plan-warning"><strong>เส้นเวลาเป็นแผน ไม่ใช่ความคืบหน้าจริง</strong> · 7 Workstreams ขยายดู 21 Work Packages ได้ · แตะแถบหรือ ◆ เพื่อดูรายละเอียดและงานก่อน–หลัง</p>}
-      takeaway="ทุกจุดตรวจมีสิ่งส่งมอบและเงื่อนไข ไม่ได้จบแค่ถึงวันที่"
+      intro={<p className="plan-warning"><strong>Plan — ไม่ใช่ Progress จริง</strong> · แตะแถบหรือ ◆ เพื่อดู Details</p>}
+      takeaway="ทุก Gate มี Deliverable + เงื่อนไข — ไม่ใช่แค่ถึงวันที่"
     >
       <div className="gantt">
         <div className="gantt-toolbar" role="toolbar" aria-label="ควบคุม Timeline">
           <div className="tb-group" role="group" aria-label="ซูม">
-            <span className="tb-label">ซูม</span>
+            <span className="tb-label">Zoom</span>
             {(Object.keys(ZOOM_LABEL) as Zoom[]).map((z) => (
               <button key={z} type="button" className="seg" aria-pressed={zoom === z} onClick={() => setZoom(z)}>{ZOOM_LABEL[z]}</button>
             ))}
           </div>
           <div className="tb-group" role="group" aria-label="ไปยังเดือน">
-            <span className="tb-label">เดือน</span>
+            <span className="tb-label">Jump</span>
             {['2026-09-21', '2026-10-01', '2026-11-01', '2026-12-01'].map((iso) => (
               <button key={iso} type="button" className="seg" onClick={() => jumpTo(iso)}>{monthShort(Number(iso.slice(5, 7)))}</button>
             ))}
@@ -311,35 +317,35 @@ export function InteractiveGantt() {
             <label>
               <span className="tb-label">Workstream</span>
               <select value={wsFilter} onChange={(e) => setWsFilter(e.target.value as 'all' | WorkstreamId)}>
-                <option value="all">ทั้งหมด</option>
+                <option value="all">All</option>
                 {workstreams.map((w) => <option key={w.id} value={w.id}>{w.id} {w.shortTitle}</option>)}
               </select>
             </label>
             <label>
               <span className="tb-label">Priority</span>
               <select value={prioFilter} onChange={(e) => setPrioFilter(e.target.value as 'all' | PriorityId)}>
-                <option value="all">ทั้งหมด</option>
+                <option value="all">All</option>
                 {priorities.filter((p) => p.id !== 'P3').map((p) => <option key={p.id} value={p.id}>{p.id} {p.label}</option>)}
               </select>
             </label>
             <label>
               <span className="tb-label">Candidate</span>
               <select value={candFilter} onChange={(e) => setCandFilter(e.target.value as CandFilter)}>
-                <option value="all">ทั้งหมด</option>
+                <option value="all">All</option>
                 <option value="C1">C1 AI Support</option>
                 <option value="C2">C2 Government</option>
                 <option value="C3">C3 Content</option>
                 <option value="C4">C4 Community</option>
-                <option value="LOCAL">Local (อนุมัติแยก)</option>
+                <option value="LOCAL">Local (separate approval)</option>
               </select>
             </label>
           </div>
           <div className="tb-group">
             <button type="button" className="seg" onClick={() => setExpanded(allExpanded ? new Set() : new Set(workstreams.map((w) => w.id)))} disabled={filterActive}>
-              {allExpanded ? 'ย่อทั้งหมด' : 'ขยาย 21 งาน'}
+              {allExpanded ? 'Collapse' : 'Expand 21 Tasks'}
             </button>
-            {filterActive && <button type="button" className="seg" onClick={clearFilters}>ล้างตัวกรอง</button>}
-            {hasFocus && <button type="button" className="seg" onClick={close}>ล้างการเลือก</button>}
+            {filterActive && <button type="button" className="seg" onClick={clearFilters}>Clear Filters</button>}
+            {hasFocus && <button type="button" className="seg" onClick={close}>Clear Selection</button>}
           </div>
         </div>
 
@@ -369,7 +375,7 @@ export function InteractiveGantt() {
               <div className="g-header">
                 <div className="g-corner" style={{ width: labelW }}>
                   <span>Workstream</span>
-                  <span className="muted">ข้อมูล ณ {fmtDate(meta.dataAsOf, false)}</span>
+                  <span className="muted">as of {fmtDate(meta.dataAsOf, false)}</span>
                 </div>
                 <div className="g-scale" style={{ width: chartW }}>
                   <div className="g-months">
@@ -428,9 +434,10 @@ export function InteractiveGantt() {
                             <span aria-hidden="true">{exp ? '▾' : '▸'}</span>
                           </button>
                           <button type="button" className="g-name" aria-haspopup="dialog" onClick={(e) => select({ kind: 'workstream', id: r.ws }, e.currentTarget)}>
+                            <span className="g-ico"><Icon name={WS_ICON[w.id]} size={18} /></span>
                             <span className="g-id">{w.id}</span>
                             <span className="g-title">{narrow ? w.shortTitle : w.title}</span>
-                            {supportWs.has(r.ws) && <span className="g-support">สนับสนุน ┄</span>}
+                            {supportWs.has(r.ws) && <span className="g-support">support ┄</span>}
                           </button>
                         </div>
                         <div className="g-lane" style={{ left: labelW, width: chartW }}>
@@ -472,27 +479,28 @@ export function InteractiveGantt() {
           </div>
 
           <aside className="p3-box">
-            <h3>ระยะขยาย / ยังไม่กำหนดวัน</h3>
-            <p className="muted">P3 — ตัดสินใจจากผล Pilot</p>
+            <h3><Icon name="scale" size={18} />P3 Scale Later</h3>
+            <p className="muted">ยังไม่กำหนดวัน · ตัดสินจากผล Pilot</p>
             <ul>{priorities.find((p) => p.id === 'P3')!.items.map((i) => <li key={i}>{i}</li>)}</ul>
-            <button type="button" className="mini-btn" aria-haspopup="dialog" onClick={(e) => select({ kind: 'p3', id: 'P3' }, e.currentTarget)}>ดูรายละเอียด</button>
+            <button type="button" className="mini-btn" aria-haspopup="dialog" onClick={(e) => select({ kind: 'p3', id: 'P3' }, e.currentTarget)}>Details</button>
           </aside>
         </div>
 
         <ul className="g-legend" aria-label="คำอธิบายสัญลักษณ์">
-          <li><i className="lg-bar lg-p0" /> P0 ปลดล็อก</li>
-          <li><i className="lg-bar lg-p1" /> P1 งานหลัก</li>
-          <li><i className="lg-bar lg-cand" /> ลายเส้น = Candidate / รอเลือกที่ M2</li>
-          <li><i className="lg-bar lg-local" /> กรอบประ = อนุมัติแยก / วันเริ่มรอยืนยัน</li>
-          <li><i className="lg-diamond" /> ◆ Gate เสนอ · <i className="lg-diamond lg-diamond-meeting" /> วันจากบันทึก</li>
-          <li><i className="lg-tick" /> ขีดในแถบ = จุดตรวจระหว่างทาง</li>
-          <li><i className="lg-solid" /> ลูกศรทึบ = ต้องเสร็จก่อนเริ่ม</li>
-          <li><i className="lg-dash" /> เส้นประ = สนับสนุน</li>
+          <li><i className="lg-bar lg-p0" /> P0 Unblock</li>
+          <li><i className="lg-bar lg-p1" /> P1 Core</li>
+          <li><i className="lg-bar lg-cand" /> Candidate (เลือกที่ M2)</li>
+          <li><i className="lg-bar lg-local" /> อนุมัติแยก · Start TBC</li>
+          <li><i className="lg-diamond" /> Proposed Gate</li>
+          <li><i className="lg-diamond lg-diamond-meeting" /> Date from Meeting</li>
+          <li><i className="lg-tick" /> In-bar Checkpoint</li>
+          <li><i className="lg-solid" /> Must finish first</li>
+          <li><i className="lg-dash" /> Support</li>
         </ul>
-        <p className="gantt-foot">1 ต.ค. = วันนำเสนอตามบันทึก · สิ้นปี = กรอบ Reform · วันย่อยอื่น = ข้อเสนอ · ยังไม่มี Gate ใดผ่านแล้ว</p>
+        <p className="gantt-foot"><Icon name="calendar" size={16} />1 ต.ค. = วันจากบันทึก · 31 ธ.ค. = กรอบ Reform · วันอื่น = Proposal · ยังไม่มี Gate ใดผ่าน</p>
 
         <div className="ms-list">
-          <h3>Milestones (แตะเพื่อดูรายละเอียด)</h3>
+          <h3>Milestones</h3>
           <ol>
             {milestones.map((m) => (
               <li key={m.id}>
@@ -501,7 +509,7 @@ export function InteractiveGantt() {
                   <span className="ms-row-id">{m.id}</span>
                   <span className="ms-row-date">{fmtDate(m.date, false)}</span>
                   <span className="ms-row-label">{m.label}</span>
-                  <span className="ms-row-status">ยังไม่ยืนยัน</span>
+                  <span className="ms-row-status">TBC</span>
                 </button>
               </li>
             ))}

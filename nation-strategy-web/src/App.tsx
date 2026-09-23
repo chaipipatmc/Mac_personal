@@ -163,8 +163,8 @@ export default function App() {
         <AcceptanceScene />
         <DecisionSummary />
         <footer className="site-footer">
-          <p>ร่างเพื่อหารือและอนุมัติ · ข้อมูล ณ 23 ก.ย. 2026 · ภาพแผน ไม่ใช่ Live Tracker</p>
-          <button type="button" className="link-btn" onClick={(e) => select({ kind: 'about', id: 'about' }, e.currentTarget)}>ที่มาข้อมูลและข้อจำกัด</button>
+          <p>Draft for discussion · as of 23 ก.ย. 2026 · Plan, not a Live Tracker</p>
+          <button type="button" className="link-btn" onClick={(e) => select({ kind: 'about', id: 'about' }, e.currentTarget)}>Sources & Limitations</button>
         </footer>
       </main>
       <BottomNav active={active} />

@@ -5,14 +5,14 @@ import { sourceById } from '../data/nationPlan'
 import { Badge } from './Badge'
 
 const ROWS = [
-  ['what', 'ทำอะไร'],
-  ['why', 'ทำไมสำคัญ'],
-  ['owner', 'เจ้าของ'],
-  ['timing', 'ช่วงเวลา / ฐานวันที่'],
-  ['prereq', 'ก่อนเริ่มต้องมี'],
-  ['deliverable', 'สิ่งส่งมอบ / เกณฑ์จบ'],
-  ['unlocks', 'ปลดล็อกอะไร'],
-  ['pending', 'เรื่องรอยืนยัน'],
+  ['what', 'What'],
+  ['why', 'Why'],
+  ['owner', 'Owner'],
+  ['timing', 'Timing'],
+  ['prereq', 'Before Start'],
+  ['deliverable', 'Deliverable / Done'],
+  ['unlocks', 'Unlocks'],
+  ['pending', 'TBC'],
 ] as const
 
 function FieldView({ field }: { field: Field }) {
@@ -21,7 +21,7 @@ function FieldView({ field }: { field: Field }) {
       <p>{field.text}</p>
       {field.more && (
         <details className="more">
-          <summary>เพิ่มเติม ({field.more.length})</summary>
+          <summary>More ({field.more.length})</summary>
           <ul>{field.more.map((m) => <li key={m}>{m}</li>)}</ul>
         </details>
       )}
@@ -98,7 +98,7 @@ export function DetailPanel() {
             </div>
           )}
           <details className="sources">
-            <summary>ที่มาข้อมูล ({d.sourceRefs.length})</summary>
+            <summary>Sources ({d.sourceRefs.length})</summary>
             <ul>
               {d.sourceRefs.map((s, i) => (
                 <li key={i}>

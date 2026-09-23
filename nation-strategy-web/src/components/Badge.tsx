@@ -1,9 +1,9 @@
 import type { Basis } from '../data/nationPlan'
 
 const LABEL: Record<Basis, string> = {
-  meeting: 'จากประชุม',
-  proposal: 'แผนที่ Mac เสนอ',
-  pending: 'รอยืนยัน',
+  meeting: 'From Meeting',
+  proposal: 'Mac Proposal',
+  pending: 'TBC',
 }
 const ICON: Record<Basis, string> = { meeting: '●', proposal: '◆', pending: '◌' }
 

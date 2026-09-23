@@ -57,7 +57,7 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
     return (cs.overflow === 'hidden' || cs.overflowY === 'hidden') && e.scrollHeight > e.clientHeight + 2
   }).map((e) => e.className || e.tagName).slice(0, 5))
   ok(`${label}: no vertically clipped text`, clipped.length === 0, clipped.join(','))
-  for (const z of ['ภาพรวม', 'รายเดือน', 'รายสัปดาห์']) {
+  for (const z of ['Overview', 'Month', 'Week']) {
     await page.click(`.gantt-toolbar .seg:text-is("${z}")`)
     await page.waitForTimeout(50)
     const bad = await chipOverlap(page)
@@ -81,7 +81,7 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   ok('nav click sets #timeline', page.url().endsWith('#timeline'), page.url())
 
   // Expand 21 work packages
-  await page.click('.gantt-toolbar .seg:text("ขยาย 21 งาน")')
+  await page.click('.gantt-toolbar .seg:text("Expand 21 Tasks")')
   ok('expand shows 21 work packages', (await page.$$('.g-row-task')).length === 21)
 
   // Bar geometry follows real dates (overview zoom)
@@ -107,7 +107,7 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   ok('T18 highlights T17 predecessor', lit.includes('T17'), lit.join(','))
   ok('Government does not wait for Audience (T15/T14 not lit)', !lit.includes('T15') && !lit.includes('T14'), lit.join(','))
   const panelOrder = await page.$$eval('.drow dt', (els) => els.map((e) => e.textContent))
-  ok('panel field order', panelOrder.join('|') === 'ทำอะไร|ทำไมสำคัญ|เจ้าของ|ช่วงเวลา / ฐานวันที่|ก่อนเริ่มต้องมี|สิ่งส่งมอบ / เกณฑ์จบ|ปลดล็อกอะไร|เรื่องรอยืนยัน', panelOrder.join('|'))
+  ok('panel field order', panelOrder.join('|') === 'What|Why|Owner|Timing|Before Start|Deliverable / Done|Unlocks|TBC', panelOrder.join('|'))
   ok('edges drawn only for selection', (await page.$$('.edge-hard')).length >= 1 && (await page.$$('.edge-hard')).length <= 4)
   // Esc closes and returns focus
   await page.keyboard.press('Escape')
@@ -133,7 +133,7 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   // Keyboard access: focus bar + Enter
   await page.focus('.g-row-task .bar[aria-label^="T05"]')
   await page.keyboard.press('Enter')
-  ok('keyboard Enter opens panel', (await page.textContent('#panel-title'))?.includes('ออกแบบ Workflow'))
+  ok('keyboard Enter opens panel', (await page.textContent('#panel-title'))?.includes('Workflow Design'))
   await page.keyboard.press('Escape')
 
   // Filter keeps cross-workstream predecessors reachable
@@ -142,14 +142,14 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   await page.selectOption('.tb-filters select >> nth=0', 'all')
   await page.selectOption('.tb-filters select >> nth=2', 'C2')
   ok('candidate filter C2 → T18 only', (await page.$$('.g-row-task')).length === 1)
-  await page.click('.seg:text("ล้างตัวกรอง")')
+  await page.click('.seg:text("Clear Filters")')
 
   // Candidate bars hatched & labelled
-  ok('candidate bars carry "รอเลือกที่ M2"', (await page.$$eval('.bar-cand', (els) => els.filter((e) => e.getAttribute('aria-label').includes('รอเลือกที่ M2')).length)) >= 4)
+  ok('candidate bars carry "รอเลือกที่ M2"', (await page.$$eval('.bar-cand', (els) => els.filter((e) => e.getAttribute('aria-label').includes('เลือกที่ M2')).length)) >= 4)
   ok('no green status colours', await page.evaluate(() => ![...document.querySelectorAll('*')].some((e) => { const c = getComputedStyle(e).backgroundColor; const m = c.match(/rgb\((\d+), (\d+), (\d+)/); return m && +m[2] > 150 && +m[2] > +m[1] + 60 && +m[2] > +m[3] + 40 })))
 
   // Plan scene → "ดูใน Timeline" → Back/Forward
-  await page.click('.topnav a:text("แผนงาน")')
+  await page.click('.topnav a:text("Workstreams")')
   await page.waitForTimeout(300)
   await page.click('button[aria-label="ดู R6 ใน Timeline"]')
   await page.waitForTimeout(400)
@@ -165,9 +165,9 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
 
   // Dependency map highlight
   await page.keyboard.press('Escape')
-  await page.click('.topnav a:text("งานเชื่อมกัน")')
+  await page.click('.topnav a:text("Dependency")')
   await page.waitForTimeout(300)
-  await page.click('.dep-node:text("สิทธิ/คุณภาพข้อมูล")')
+  await page.click('.dep-node:has-text("Data Rights")')
   const cls = await page.$$eval('.dep-item', (els) => els.map((e) => e.className))
   ok('dependency: one selected, prev+next highlighted, rest dimmed', cls.filter((c) => c.includes('is-selected')).length === 1 && cls.filter((c) => c.includes('is-prev')).length === 1 && cls.filter((c) => c.includes('is-next')).length === 1 && cls.filter((c) => c.includes('is-dim')).length > 5)
   ok('dependency panel offers ดูใน Timeline', !!(await page.$('.panel-foot .btn')))
@@ -177,7 +177,7 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   await page.keyboard.press('Escape')
 
   // Arrow keys step scenes
-  await page.click('.topnav a:text("ตรวจรับ")')
+  await page.click('.topnav a:text("Acceptance")')
   await page.waitForTimeout(300)
   await page.evaluate(() => document.activeElement.blur())
   await page.keyboard.press('ArrowRight')
@@ -199,7 +199,7 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
 {
   const { ctx, page, errs } = await newPage({ width: 390, height: 844 }, '#timeline?workstream=R6&milestone=M4', { touch: true })
   await page.waitForTimeout(400)
-  ok('deep link opens M4 panel', (await page.textContent('#panel-title'))?.includes('ทดสอบผ่าน'))
+  ok('deep link opens M4 panel', (await page.textContent('#panel-title'))?.includes('Test Pass'))
   ok('deep link expands R6', (await page.$$('.g-row-task .bar[aria-label^="T18"]')).length === 1)
   await page.screenshot({ path: `${OUT}/390-deeplink-sheet.png` })
   const sheet = await page.$eval('.panel', (e) => { const r = e.getBoundingClientRect(); return { top: r.top, h: r.height, bottom: r.bottom } })
@@ -216,12 +216,12 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   // Tap flow on mobile
   await page.evaluate(() => document.getElementById('direction').scrollIntoView())
   await page.tap('.outcome-2')
-  ok('tap outcome opens sheet', (await page.textContent('#panel-title'))?.includes('ข้อมูลเชื่อมกัน'))
+  ok('tap outcome opens sheet', (await page.textContent('#panel-title'))?.includes('Connected Data'))
   await page.tap('.panel-backdrop', { position: { x: 20, y: 20 } })
   ok('tap backdrop closes sheet', !(await page.$('.panel')))
   // bottom nav menu
   await page.tap('.bn-current')
-  await page.tap('.bottom-menu button:text("ขออนุมัติ")')
+  await page.tap('.bottom-menu button:text("Decision")')
   await page.waitForTimeout(300)
   ok('bottom nav jumps to scene', page.url().endsWith('#decision'), page.url())
   ok('mobile: no console errors', errs.length === 0, errs.join(' | '))
