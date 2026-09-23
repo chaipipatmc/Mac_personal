@@ -59,8 +59,8 @@ export function DetailPanel() {
 
   if (!selection) return null
   const d = getDetail(selection)
-  // Scroll spy keeps the hash on the active scene; no Timeline button needed while already there.
-  const timelineVisible = window.location.hash.startsWith('#timeline')
+  // App marks the active scene on <body>; no Timeline button needed while already there.
+  const timelineVisible = document.body.dataset.scene === 'timeline'
 
   return (
     <>

@@ -12,6 +12,14 @@ import { InteractiveGantt } from './components/InteractiveGantt'
 import { AcceptanceScene } from './components/AcceptanceScene'
 import { DecisionSummary } from './components/DecisionSummary'
 
+// Embedded viewers (e.g. sandboxed frames) may refuse history updates; the page must still work.
+function setHash(hash: string, push = false) {
+  try {
+    if (push) window.history.pushState(null, '', hash)
+    else window.history.replaceState(null, '', hash)
+  } catch { /* hash sharing unavailable here */ }
+}
+
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 function selectionFromFocus(focus: TimelineFocus): Selection | null {
@@ -49,7 +57,7 @@ export default function App() {
 
   const goScene = useCallback((scene: SceneId, focus: TimelineFocus = {}) => {
     const hash = buildHash(scene, focus)
-    if (hash !== window.location.hash) window.history.pushState(null, '', hash)
+    if (hash !== window.location.hash) setHash(hash, true)
     scrollToScene(scene)
     if (scene === 'timeline' && Object.keys(focus).length) applyFocus(focus)
   }, [scrollToScene, applyFocus])
@@ -93,7 +101,7 @@ export default function App() {
   useEffect(() => {
     if (active !== 'timeline') return
     const hash = buildHash('timeline', selection && TIMELINE_KINDS.has(selection.kind) ? timelineFocus : {})
-    if (hash !== window.location.hash) window.history.replaceState(null, '', hash)
+    if (hash !== window.location.hash) setHash(hash)
   }, [active, selection, timelineFocus])
 
   // Scroll spy.
@@ -106,7 +114,7 @@ export default function App() {
       const id = hit.target.id as SceneId
       if (id !== activeRef.current) {
         setActive(id)
-        window.history.replaceState(null, '', buildHash(id))
+        setHash(buildHash(id))
       }
     }, { rootMargin: '-40% 0px -55% 0px', threshold: [0, 0.01] })
     els.forEach((el) => io.observe(el))
@@ -127,6 +135,10 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [goScene])
+
+  useEffect(() => {
+    document.body.dataset.scene = active
+  }, [active])
 
   useEffect(() => {
     document.body.classList.toggle('panel-open', !!selection)

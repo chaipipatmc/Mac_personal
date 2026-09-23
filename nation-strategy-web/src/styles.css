@@ -63,7 +63,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 /* ---------- top bar ---------- */
 .topbar {
-  position: sticky; top: 0; z-index: 40;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40;
   background: rgba(255,255,255,.96);
   border-bottom: 1px solid var(--line);
   backdrop-filter: saturate(1.4) blur(6px);
