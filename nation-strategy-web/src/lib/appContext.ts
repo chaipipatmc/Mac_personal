@@ -11,6 +11,10 @@ export interface AppApi {
   openInTimeline: (focus: TimelineFocus) => void
   timelineFocus: TimelineFocus
   isSelected: (kind: Selection['kind'], id: string) => boolean
+  /** Bumps whenever the editable plan changes. */
+  planVersion: number
+  editMode: boolean
+  setEditMode: (on: boolean) => void
 }
 
 export const AppContext = createContext<AppApi | null>(null)

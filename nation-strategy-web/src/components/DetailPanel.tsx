@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useApp } from '../lib/appContext'
 import { getDetail, type Field, type LinkItem } from '../data/details'
-import { sourceById } from '../data/nationPlan'
+import { sourceById, taskById } from '../data/nationPlan'
 import { Badge } from './Badge'
+import { EditForm } from './EditForm'
 
 const ROWS = [
   ['what', 'What'],
@@ -44,7 +45,7 @@ function Links({ items }: { items?: LinkItem[] }) {
 }
 
 export function DetailPanel() {
-  const { selection, close, openInTimeline } = useApp()
+  const { selection, close, openInTimeline, editMode } = useApp()
   const headRef = useRef<HTMLHeadingElement>(null)
   const key = selection ? `${selection.kind}:${selection.id}` : ''
 
@@ -58,6 +59,7 @@ export function DetailPanel() {
   }, [key])
 
   if (!selection) return null
+  if (selection.kind === 'task' && !taskById[selection.id]) return null
   const d = getDetail(selection)
   // App marks the active scene on <body>; no Timeline button needed while already there.
   const timelineVisible = document.body.dataset.scene === 'timeline'
@@ -76,6 +78,7 @@ export function DetailPanel() {
           <button type="button" className="panel-close" onClick={close} aria-label="ปิดรายละเอียด (Esc)">✕<span className="sr-only"> ปิด</span></button>
         </header>
         <div className="panel-body">
+          {editMode && <EditForm sel={selection} onRemoved={close} />}
           <dl className="detail-rows">
             {ROWS.map(([k, label]) => {
               const field = d[k]

@@ -2,25 +2,30 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { useApp } from '../lib/appContext'
 import {
   meta, milestones, msById, priorities, tasks, taskById, workstreams, minimumDataMarker, relations,
-  type CandidateId, type Milestone, type PriorityId, type Task, type WorkstreamId,
+  type CandidateId, type Milestone, type MilestoneId, type PriorityId, type Task, type WorkstreamId,
 } from '../data/nationPlan'
 import { dayNumber, fmtDate, fmtRange, isoFromDay, monthShort } from '../lib/dates'
 import { relatedTo } from '../lib/graph'
+import {
+  addTask, canUndo, editCount, getRestoredUi, getSaveState, isEdited, patchMilestone, patchTask,
+  registerUiPart, resetAll, saveNow, setDragging, undo,
+} from '../lib/planStore'
 import { SceneShell } from './SceneShell'
 import { Icon, WS_ICON } from './Icon'
 
-// Chart domain: Monday before the roadmap start → day after the roadmap end.
+// Chart domain starts on the Monday before the roadmap; it grows if an edit moves work past 31 Dec.
 const DOMAIN_START = dayNumber('2026-09-21')
-const DOMAIN_END = dayNumber(meta.timelineEnd) + 1
-const DAYS = DOMAIN_END - DOMAIN_START
 
 type Zoom = 'overview' | 'month' | 'week'
 const ZOOM_LABEL: Record<Zoom, string> = { overview: 'Overview', month: 'Month', week: 'Week' }
 type CandFilter = 'all' | CandidateId | 'LOCAL'
+type DragKind = 'move' | 'start' | 'end' | 'ms'
+interface Drag { id: string; kind: DragKind; x0: number; delta: number; moved: boolean }
 
-const WS_ROW = 58
-const TASK_ROW = 50
+const WS_ROW = 60
+const TASK_ROW = 52
 const CHIP_H = 28
+const PHASE_H = 26
 
 let measureCtx: CanvasRenderingContext2D | null = null
 /** Measures with the page's real font stack so labels never get clipped. */
@@ -42,31 +47,54 @@ function barLabel(t: Task) {
   return t.title
 }
 
-function tipFor(t: Task) {
-  const lines = [`${t.id} ${t.title}`, `${fmtRange(t.start, t.end)} · วันที่เสนอ`]
-  if (isCandidate(t)) lines.push(`Candidate ${t.conditionalOn} — รอเลือกที่ M2`)
-  else if (isLocal(t)) lines.push('อนุมัติธุรกิจแยก · วันเริ่มจริงรอยืนยัน')
+const shiftIso = (iso: string, days: number) => isoFromDay(dayNumber(iso) + days)
+
+/** Predecessors that finish on/after this task's start (possible after a drag). */
+function conflicts(t: Task): string[] {
+  return t.predecessors.filter((p) => {
+    const end = taskById[p]?.end ?? msById[p as MilestoneId]?.date
+    return end && dayNumber(end) >= dayNumber(t.start)
+  })
+}
+
+function tipFor(t: Task, editing: boolean) {
+  const lines = [`${t.id} ${t.title}`, `${fmtRange(t.start, t.end)} · ${isEdited(t.id) ? 'แก้ไขแล้ว' : 'วันที่เสนอ'}`]
+  const c = conflicts(t)
+  if (c.length) lines.push(`⚠ เริ่มก่อน ${c.join(', ')} เสร็จ`)
+  else if (isCandidate(t)) lines.push(`Candidate ${t.conditionalOn} — เลือกที่ M2`)
+  else if (isLocal(t)) lines.push('อนุมัติแยก · Start TBC')
   else lines.push(t.note.length > 60 ? `${t.note.slice(0, 58)}…` : t.note)
-  lines.push('แตะ/คลิกเพื่อดูรายละเอียด')
+  lines.push(editing ? 'ลากเพื่อย้าย · ลากขอบเพื่อปรับวัน' : 'แตะ/คลิกเพื่อดู Details')
   return lines
 }
-function msTip(m: Milestone) {
-  return [`${m.id} ${m.label}`, `${fmtDate(m.date)} · ${m.dateBasis === 'proposed' ? 'วันที่เสนอ' : m.dateBasis === 'meeting_date' ? 'วันที่ในบันทึก' : 'กรอบสิ้นปีจากประชุม'}`, 'สถานะจริง: ยังไม่ยืนยัน', 'แตะ/คลิกเพื่อดูรายละเอียด']
+function msTip(m: Milestone, editing: boolean) {
+  return [`${m.id} ${m.label}`, `${fmtDate(m.date)} · ${isEdited(m.id) ? 'แก้ไขแล้ว' : m.dateBasis === 'proposed' ? 'วันที่เสนอ' : m.dateBasis === 'meeting_date' ? 'วันที่ในบันทึก' : 'กรอบสิ้นปีจากประชุม'}`, 'Status: TBC', editing ? 'ลากซ้าย–ขวาเพื่อย้ายวัน' : 'แตะ/คลิกเพื่อดู Details']
+}
+
+function timeAgo(iso: string | null) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getDate()} ${monthShort(d.getMonth() + 1)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 export function InteractiveGantt() {
-  const { select, selection, timelineFocus, close } = useApp()
+  const { select, selection, timelineFocus, close, planVersion, editMode, setEditMode } = useApp()
+  const restored = useMemo(() => getRestoredUi<{ zoom?: Zoom; expanded?: WorkstreamId[]; left?: number; top?: number }>('gantt'), [])
   const scrollRef = useRef<HTMLDivElement>(null)
   const [viewW, setViewW] = useState(1000)
-  const [zoom, setZoom] = useState<Zoom>(() => (window.innerWidth < 760 ? 'month' : 'overview'))
-  const [expanded, setExpanded] = useState<Set<WorkstreamId>>(new Set())
+  const [zoom, setZoom] = useState<Zoom>(() => restored?.zoom ?? (window.innerWidth < 760 ? 'month' : 'overview'))
+  const [expanded, setExpanded] = useState<Set<WorkstreamId>>(() => new Set(restored?.expanded ?? []))
   const [wsFilter, setWsFilter] = useState<'all' | WorkstreamId>('all')
   const [prioFilter, setPrioFilter] = useState<'all' | PriorityId>('all')
   const [candFilter, setCandFilter] = useState<CandFilter>('all')
   const [tip, setTip] = useState<{ lines: string[]; x: number; y: number } | null>(null)
+  const [drag, setDrag] = useState<Drag | null>(null)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const suppressClick = useRef(false)
 
   const narrow = viewW < 640
   const labelW = narrow ? 128 : 236
+  const save = getSaveState()
 
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -74,8 +102,31 @@ export function InteractiveGantt() {
     const ro = new ResizeObserver(() => setViewW(el.clientWidth))
     ro.observe(el)
     setViewW(el.clientWidth)
+    if (restored?.left !== undefined) requestAnimationFrame(() => el.scrollTo({ left: restored.left, top: restored.top ?? 0 }))
     return () => ro.disconnect()
-  }, [])
+  }, [restored])
+
+  // Survive the reload a save triggers.
+  const uiRef = useRef({ zoom, expanded })
+  uiRef.current = { zoom, expanded }
+  useEffect(() => registerUiPart('gantt', () => ({
+    zoom: uiRef.current.zoom, expanded: [...uiRef.current.expanded],
+    left: scrollRef.current?.scrollLeft ?? 0, top: scrollRef.current?.scrollTop ?? 0,
+  })), [])
+
+  // ---- live dates (with an in-progress drag applied) -----------------------
+  const liveTask = (t: Task): Task => {
+    if (!drag || drag.id !== t.id || !drag.delta) return t
+    if (drag.kind === 'move') return { ...t, start: shiftIso(t.start, drag.delta), end: shiftIso(t.end, drag.delta) }
+    if (drag.kind === 'start') { const s = shiftIso(t.start, drag.delta); return { ...t, start: s > t.end ? t.end : s } }
+    if (drag.kind === 'end') { const e = shiftIso(t.end, drag.delta); return { ...t, end: e < t.start ? t.start : e } }
+    return t
+  }
+  const liveMs = (m: Milestone): Milestone => (drag && drag.kind === 'ms' && drag.id === m.id && drag.delta ? { ...m, date: shiftIso(m.date, drag.delta) } : m)
+
+  const lastDay = Math.max(dayNumber(meta.timelineEnd), ...tasks.map((t) => dayNumber(liveTask(t).end)), ...milestones.map((m) => dayNumber(liveMs(m).date)))
+  const DOMAIN_END = lastDay + 1
+  const DAYS = DOMAIN_END - DOMAIN_START
 
   const pxPerDay = zoom === 'overview' ? Math.max(3, (viewW - labelW - 4) / DAYS) : zoom === 'month' ? 10 : 26
   const chartW = Math.round(DAYS * pxPerDay)
@@ -103,13 +154,14 @@ export function InteractiveGantt() {
     }
     return out
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded, wsFilter, prioFilter, candFilter])
+  }, [expanded, wsFilter, prioFilter, candFilter, planVersion])
   const bodyH = rows.reduce((s, r) => s + r.h, 0)
   const isExpanded = (ws: WorkstreamId) => rows.some((r) => r.type === 'task' && r.ws === ws)
 
   // ---- highlight -----------------------------------------------------------
   const selId = selection && (selection.kind === 'task' || selection.kind === 'milestone' || selection.kind === 'workstream') ? selection.id : null
-  const rel = useMemo(() => relatedTo(selId), [selId])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const rel = useMemo(() => relatedTo(selId), [selId, planVersion])
   const hasFocus = !!selId
   const lit = (id: string) => !hasFocus || rel.items.has(id)
   const selectedWs = selection?.kind === 'workstream' ? (selection.id as WorkstreamId) : null
@@ -129,7 +181,7 @@ export function InteractiveGantt() {
 
   useEffect(() => {
     const el = scrollRef.current
-    if (!el) return
+    if (!el || !Object.keys(timelineFocus).length) return
     const id = requestAnimationFrame(() => {
       let x: number | null = null
       let rowKey: string | null = null
@@ -142,9 +194,8 @@ export function InteractiveGantt() {
       if (rowKey) {
         const r = rows.find((rr) => rr.key === rowKey)
         if (r) {
-          const top = r.y
           const headerH = el.querySelector<HTMLElement>('.g-header')?.offsetHeight ?? 0
-          if (top < el.scrollTop || top + r.h > el.scrollTop + el.clientHeight - headerH) el.scrollTo({ top: Math.max(0, top - 8), behavior: 'auto' })
+          if (r.y < el.scrollTop || r.y + r.h > el.scrollTop + el.clientHeight - headerH) el.scrollTo({ top: Math.max(0, r.y - 8), behavior: 'auto' })
         }
       }
     })
@@ -164,7 +215,7 @@ export function InteractiveGantt() {
       d = next
     }
     return cells
-  }, [pxPerDay])
+  }, [pxPerDay, DOMAIN_END])
   const weekCells = useMemo(() => {
     const cells: { label: string; x: number; iso: string }[] = []
     for (let d = DOMAIN_START; d < DOMAIN_END; d += 7) {
@@ -172,20 +223,34 @@ export function InteractiveGantt() {
       cells.push({ label: String(Number(iso.slice(8))), x: (d - DOMAIN_START) * pxPerDay, iso })
     }
     return cells
-  }, [pxPerDay])
+  }, [pxPerDay, DOMAIN_END])
   const showWeekLabels = pxPerDay * 7 >= 22
 
+  // Phases between the gates — they follow the milestone dates, edits included.
+  const liveMilestones = milestones.map(liveMs)
+  const md = (id: MilestoneId) => liveMilestones.find((m) => m.id === id)!.date
+  const phases = [
+    { key: 'prep', label: 'Prep', from: meta.timelineStart, to: md('M2') },
+    { key: 'design', label: 'Design', from: shiftIso(md('M2'), 1), to: md('M3') },
+    { key: 'build', label: 'Build & Test', from: shiftIso(md('M3'), 1), to: md('M4') },
+    { key: 'ready', label: 'Go-live Prep', from: shiftIso(md('M4'), 1), to: md('M5') },
+    { key: 'measure', label: 'Measure', from: shiftIso(md('M5'), 1), to: md('M6') },
+    { key: 'close', label: 'Close', from: shiftIso(md('M6'), 1), to: md('M7') },
+  ].filter((p) => p.to >= p.from)
+
+  const today = isoFromDay(Math.floor(Date.now() / 86_400_000))
+  const todayIn = dayNumber(today) >= DOMAIN_START && dayNumber(today) < DOMAIN_END
+
   // ---- milestone label placement (no overlapping hit targets) --------------
-  const chips = useMemo(() => {
+  const chips = (() => {
     const gap = 4
     const MAX_LEVELS = 4
     const lastRight: number[] = []
-    const placed = milestones.map((m) => {
+    const placed = liveMilestones.map((m) => {
       const x = xMid(m.date)
       const text = narrow || pxPerDay < 6 ? m.id : `${m.id} ${m.label}`
       const w = Math.ceil(textWidth(text)) + 22
       let left = Math.min(Math.max(2, x - w / 2), chartW - w - 2)
-      // Lowest free label row first (row 0 sits right above the diamonds).
       let level = 0
       while (level < MAX_LEVELS && left < (lastRight[level] ?? -Infinity) + gap) level++
       if (level === MAX_LEVELS) {
@@ -197,9 +262,7 @@ export function InteractiveGantt() {
     })
     const levels = Math.max(2, lastRight.length)
     return placed.map((c) => ({ ...c, lane: levels - 1 - c.level, levels }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pxPerDay, chartW, narrow])
-
+  })()
   const MS_HEADER = chips[0].levels * CHIP_H + 22
 
   // ---- geometry for edges --------------------------------------------------
@@ -209,8 +272,8 @@ export function InteractiveGantt() {
     .map((e) => {
       const a = rowOfTask(e.from); const b = rowOfTask(e.to)
       if (!a || !b) return null
-      const x1 = xOf(taskById[e.from].end) + pxPerDay; const y1 = a.y + a.h / 2
-      const x2 = xOf(taskById[e.to].start); const y2 = b.y + b.h / 2
+      const x1 = xOf(liveTask(taskById[e.from]).end) + pxPerDay; const y1 = a.y + a.h / 2
+      const x2 = xOf(liveTask(taskById[e.to]).start); const y2 = b.y + b.h / 2
       const d = y1 === y2
         ? `M${x1} ${y1 - 8} C${x1 + 10} ${y1 - 24}, ${x2 - 10} ${y2 - 24}, ${x2} ${y2 - 8}`
         : `M${x1} ${y1} C${x1 + 24} ${y1}, ${x2 - 24} ${y2}, ${x2} ${y2}`
@@ -227,17 +290,17 @@ export function InteractiveGantt() {
     }).filter(Boolean) as { key: string; d: string }[]
     : []
 
-  // ---- handlers ------------------------------------------------------------
+  // ---- tooltip -------------------------------------------------------------
   const tipShownAt = useRef(0)
   const showTip = (lines: string[], el: HTMLElement) => {
     tipShownAt.current = Date.now()
     const r = el.getBoundingClientRect()
     setTip({ lines, x: Math.min(r.left + 8, window.innerWidth - 280), y: r.bottom + 6 })
   }
-  const tipProps = (lines: string[]) => ({
-    onPointerEnter: (e: React.PointerEvent<HTMLElement>) => { if (e.pointerType === 'mouse') showTip(lines, e.currentTarget) },
-    onPointerLeave: () => setTip(null),
-    onFocus: (e: React.FocusEvent<HTMLElement>) => { if (e.currentTarget.matches(':focus-visible')) showTip(lines, e.currentTarget) },
+  const tipProps = (lines: () => string[]) => ({
+    onPointerEnter: (e: React.PointerEvent<HTMLElement>) => { if (e.pointerType === 'mouse' && !drag) showTip(lines(), e.currentTarget) },
+    onPointerLeave: () => { if (!drag) setTip(null) },
+    onFocus: (e: React.FocusEvent<HTMLElement>) => { if (e.currentTarget.matches(':focus-visible')) showTip(lines(), e.currentTarget) },
     onBlur: () => setTip(null),
   })
   useEffect(() => {
@@ -245,6 +308,58 @@ export function InteractiveGantt() {
     window.addEventListener('scroll', hide, true)
     return () => window.removeEventListener('scroll', hide, true)
   }, [])
+
+  // ---- drag to edit --------------------------------------------------------
+  const startDrag = (e: React.PointerEvent<HTMLElement>, id: string, kind: DragKind) => {
+    if (!editMode || e.button !== 0) return
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+    setDragging(true)
+    setDrag({ id, kind, x0: e.clientX, delta: 0, moved: false })
+  }
+  const onDragMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (!drag) return
+    const dx = e.clientX - drag.x0
+    const delta = Math.round(dx / pxPerDay)
+    const moved = drag.moved || Math.abs(dx) > 4
+    if (delta !== drag.delta || moved !== drag.moved) {
+      setDrag({ ...drag, delta, moved })
+      const label = drag.kind === 'ms'
+        ? (() => { const m = liveMs(msById[drag.id as MilestoneId]); return [`${m.id} → ${fmtDate(shiftIso(msById[drag.id as MilestoneId].date, delta))}`] })()
+        : (() => { const t = liveTask({ ...taskById[drag.id] }); return [`${drag.id} → ${fmtRange(t.start, t.end)}`] })()
+      setTip({ lines: [...label, 'ปล่อยเมาส์เพื่อบันทึก'], x: Math.min(e.clientX + 12, window.innerWidth - 280), y: e.clientY + 18 })
+    }
+  }
+  const endDrag = () => {
+    if (!drag) return
+    if (drag.moved) suppressClick.current = true
+    if (drag.delta) {
+      if (drag.kind === 'ms') patchMilestone(drag.id as MilestoneId, { date: shiftIso(msById[drag.id as MilestoneId].date, drag.delta) })
+      else {
+        const t = liveTask(taskById[drag.id])
+        patchTask(drag.id, { start: t.start, end: t.end })
+      }
+    }
+    setDrag(null)
+    setTip(null)
+    setDragging(false)
+  }
+  const dragProps = {
+    onPointerMove: onDragMove,
+    onPointerUp: endDrag,
+    onPointerCancel: endDrag,
+  }
+  const onBarKey = (e: React.KeyboardEvent, t: Task) => {
+    if (!editMode || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return
+    e.preventDefault(); e.stopPropagation()
+    const d = e.key === 'ArrowRight' ? 1 : -1
+    if (e.shiftKey) { const end = shiftIso(t.end, d); if (end >= t.start) patchTask(t.id, { end }) }
+    else patchTask(t.id, { start: shiftIso(t.start, d), end: shiftIso(t.end, d) })
+  }
+  const clickGuard = (fn: (el: HTMLElement) => void) => (e: React.MouseEvent<HTMLElement>) => {
+    if (suppressClick.current) { suppressClick.current = false; return }
+    fn(e.currentTarget)
+  }
 
   const toggle = (ws: WorkstreamId) => setExpanded((prev) => {
     const n = new Set(prev)
@@ -254,19 +369,31 @@ export function InteractiveGantt() {
   const allExpanded = workstreams.every((w) => expanded.has(w.id))
   const jumpTo = (iso: string) => scrollRef.current?.scrollTo({ left: Math.max(0, xOf(iso) - 8), behavior: 'smooth' })
   const clearFilters = () => { setWsFilter('all'); setPrioFilter('all'); setCandFilter('all') }
+  const onAdd = (ws: WorkstreamId) => {
+    const start = todayIn && today >= meta.timelineStart ? today : meta.timelineStart
+    const id = addTask(ws, start, shiftIso(start, 13))
+    setExpanded((prev) => new Set(prev).add(ws))
+    select({ kind: 'task', id }, null)
+  }
 
-  const renderBar = (t: Task, inSummary: boolean): ReactNode => {
+  const renderBar = (raw: Task, inSummary: boolean): ReactNode => {
+    const t = liveTask(raw)
     const left = xOf(t.start)
     const width = xOf(t.end) + pxPerDay - left
-    const label = `${t.id} ${inSummary ? t.title : barLabel(t)}`
+    const full = `${t.id} ${barLabel(t)}`
+    const short = `${inSummary ? '' : `${t.id} `}${t.short ?? t.title}`
+    const label = !inSummary && textWidth(full, 600) + 16 < width ? full : short
     const fits = textWidth(label, 600) + 16 < width
+    const warn = conflicts(t)
+    const edited = isEdited(t.id)
     const cls = [
       'bar', `bar-${t.priority.toLowerCase()}`,
-      isCandidate(t) ? 'bar-cand' : '', isLocal(t) ? 'bar-local' : '',
+      isCandidate(t) ? 'bar-cand' : '', isLocal(t) ? 'bar-local' : '', t.custom ? 'bar-custom' : '',
       inSummary ? 'bar-sum' : '',
       !taskMatches(t) && filterActive ? 'bar-filtered' : '',
       hasFocus ? (lit(t.id) ? 'is-lit' : 'is-dim') : '',
       selection?.kind === 'task' && selection.id === t.id ? 'is-selected' : '',
+      editMode ? 'is-editable' : '', drag?.id === t.id ? 'is-dragging' : '', warn.length ? 'has-warn' : '',
     ].filter(Boolean).join(' ')
     return (
       <button
@@ -274,21 +401,32 @@ export function InteractiveGantt() {
         type="button"
         className={cls}
         style={{ left, width }}
-        aria-label={`${t.id} ${barLabel(t)}, ${fmtRange(t.start, t.end)}, วันที่เสนอ`}
+        aria-label={`${t.id} ${barLabel(t)}, ${fmtRange(t.start, t.end)}, ${edited ? 'แก้ไขแล้ว' : 'วันที่เสนอ'}${warn.length ? `, เริ่มก่อน ${warn.join(' ')} เสร็จ` : ''}${editMode ? ', ใช้ลูกศรซ้ายขวาเพื่อเลื่อน' : ''}`}
         aria-haspopup="dialog"
-        onClick={(e) => { setTip(null); select({ kind: 'task', id: t.id }, e.currentTarget) }}
-        {...tipProps(tipFor(t))}
+        onClick={clickGuard((el) => { setTip(null); select({ kind: 'task', id: t.id }, el) })}
+        onPointerDown={(e) => startDrag(e, t.id, 'move')}
+        onKeyDown={(e) => onBarKey(e, raw)}
+        {...dragProps}
+        {...tipProps(() => tipFor(liveTask(taskById[t.id] ?? t), editMode))}
       >
+        {editMode && !inSummary && <span className="grip grip-start" aria-hidden="true" onPointerDown={(e) => startDrag(e, t.id, 'start')} />}
         {!inSummary && t.checkpoints.map((c, i) => {
           const iso = c.milestoneId ? msById[c.milestoneId].date : c.date!
           const cx = xOf(iso) + pxPerDay / 2 - left
           if (cx <= 2 || cx >= width - 1) return null
           return <span key={i} className={`cp${c.date ? ' cp-marker' : ''}`} style={{ left: cx }} aria-hidden="true" />
         })}
-        {(fits || !inSummary) && <span className={`bar-text${fits ? '' : ' bar-text-out'}`}>{label}</span>}
+        {(fits || !inSummary) && <span className={`bar-text${fits ? '' : ' bar-text-out'}`}>{warn.length ? '⚠ ' : ''}{label}{edited ? ' ✎' : ''}</span>}
+        {editMode && !inSummary && <span className="grip grip-end" aria-hidden="true" onPointerDown={(e) => startDrag(e, t.id, 'end')} />}
       </button>
     )
   }
+
+  const statusText = save.status === 'saving' ? (save.message || 'Saving…')
+    : save.status === 'dirty' ? (save.message || 'มีการแก้ไข — จะบันทึกอัตโนมัติ')
+      : save.status === 'readonly' ? save.message
+        : save.status === 'error' ? save.message
+          : save.savedAt ? `Saved ${timeAgo(save.savedAt)}${save.mode === 'local' ? ' (ในเบราว์เซอร์นี้)' : ''}` : 'Baseline — ยังไม่มีการแก้ไข'
 
   return (
     <SceneShell
@@ -296,10 +434,29 @@ export function InteractiveGantt() {
       wide
       headline="Timeline ก.ย.–ธ.ค. 2026"
       badges={['proposal', 'meeting']}
-      intro={<p className="plan-warning"><strong>Plan — ไม่ใช่ Progress จริง</strong> · แตะแถบหรือ ◆ เพื่อดู Details</p>}
+      intro={<p className="plan-warning"><strong>Plan — ไม่ใช่ Progress จริง</strong> · แตะแถบหรือ ◆ เพื่อดู Details · กด Edit เพื่อลากปรับ</p>}
       takeaway="ทุก Gate มี Deliverable + เงื่อนไข — ไม่ใช่แค่ถึงวันที่"
     >
-      <div className="gantt">
+      <div className={`gantt${editMode ? ' is-edit' : ''}`}>
+        <div className="edit-bar" role="group" aria-label="แก้ไขแผน">
+          <button type="button" className={`seg seg-edit${editMode ? ' on' : ''}`} aria-pressed={editMode} onClick={() => setEditMode(!editMode)} disabled={save.status === 'readonly'}>
+            <Icon name={editMode ? 'check' : 'review'} size={18} />{editMode ? 'Done' : 'Edit'}
+          </button>
+          <span className={`save-chip save-${save.status}`} role="status" aria-live="polite">
+            <span className="save-dot" aria-hidden="true" />{statusText}
+          </span>
+          {editMode && (
+            <>
+              <button type="button" className="seg" onClick={undo} disabled={!canUndo()}>↶ Undo</button>
+              {(save.status === 'dirty' || save.status === 'error') && <button type="button" className="seg" onClick={() => void saveNow()}>Save now</button>}
+              {editCount() > 0 && (confirmReset
+                ? <span className="confirm"><span>คืนค่าเดิมทั้งหมด?</span><button type="button" className="seg danger" onClick={() => { resetAll(); setConfirmReset(false) }}>Reset</button><button type="button" className="seg" onClick={() => setConfirmReset(false)}>Cancel</button></span>
+                : <button type="button" className="seg" onClick={() => setConfirmReset(true)}>Reset all</button>)}
+              <span className="edit-hint">ลากแถบ = ย้าย · ลากขอบ = ปรับวัน · ลาก ◆ = ย้าย Gate · แตะเพื่อแก้คำ</span>
+            </>
+          )}
+        </div>
+
         <div className="gantt-toolbar" role="toolbar" aria-label="ควบคุม Timeline">
           <div className="tb-group" role="group" aria-label="ซูม">
             <span className="tb-label">Zoom</span>
@@ -342,7 +499,7 @@ export function InteractiveGantt() {
           </div>
           <div className="tb-group">
             <button type="button" className="seg" onClick={() => setExpanded(allExpanded ? new Set() : new Set(workstreams.map((w) => w.id)))} disabled={filterActive}>
-              {allExpanded ? 'Collapse' : 'Expand 21 Tasks'}
+              {allExpanded ? 'Collapse' : `Expand ${tasks.length} Tasks`}
             </button>
             {filterActive && <button type="button" className="seg" onClick={clearFilters}>Clear Filters</button>}
             {hasFocus && <button type="button" className="seg" onClick={close}>Clear Selection</button>}
@@ -365,7 +522,7 @@ export function InteractiveGantt() {
 
         <div className="gantt-layout">
           <div
-            className={`gantt-scroll${hasFocus ? ' has-focus' : ''}`}
+            className={`gantt-scroll${hasFocus ? ' has-focus' : ''}${drag ? ' is-dragging' : ''}`}
             ref={scrollRef}
             tabIndex={0}
             aria-label="แผนภูมิ Gantt — เลื่อนแนวนอนเพื่อดูช่วงเวลา"
@@ -379,10 +536,21 @@ export function InteractiveGantt() {
                 </div>
                 <div className="g-scale" style={{ width: chartW }}>
                   <div className="g-months">
-                    {monthCells.map((c) => <div key={c.iso} className="g-month" style={{ left: c.x, width: c.w }}><span>{c.w > 40 ? c.label : c.label.split(' ')[0]}</span></div>)}
+                    {monthCells.map((c, i) => <div key={c.iso} className={`g-month${i % 2 ? ' alt' : ''}`} style={{ left: c.x, width: c.w }}><span>{c.w > 70 ? c.label : c.label.split(' ')[0]}</span></div>)}
                   </div>
                   <div className="g-weeks">
                     {weekCells.map((c) => <div key={c.iso} className="g-week" style={{ left: c.x, width: pxPerDay * 7 }}>{showWeekLabels && <span>{c.label}</span>}</div>)}
+                    {todayIn && <span className="today-tag" style={{ left: xMid(today) }}>Today</span>}
+                  </div>
+                  <div className="g-phases" style={{ height: PHASE_H }} aria-label="Phases">
+                    {phases.map((p, i) => {
+                      const l = xOf(p.from); const w = xOf(p.to) + pxPerDay - l
+                      return (
+                        <span key={p.key} className={`phase phase-${i}`} style={{ left: l, width: w }} title={`${p.label}: ${fmtRange(p.from, p.to)}`}>
+                          {textWidth(p.label, 700) + 12 < w ? p.label : ''}
+                        </span>
+                      )
+                    })}
                   </div>
                   <div className="g-ms" style={{ height: MS_HEADER }}>
                     <svg className="g-ms-leaders" width={chartW} height={MS_HEADER} aria-hidden="true">
@@ -396,15 +564,17 @@ export function InteractiveGantt() {
                       <button
                         key={c.m.id}
                         type="button"
-                        className={`ms-chip${hasFocus ? (lit(c.m.id) ? ' is-lit' : ' is-dim') : ''}${selection?.kind === 'milestone' && selection.id === c.m.id ? ' is-selected' : ''}${c.m.dateBasis !== 'proposed' ? ' ms-meeting' : ''}`}
+                        className={`ms-chip${hasFocus ? (lit(c.m.id) ? ' is-lit' : ' is-dim') : ''}${selection?.kind === 'milestone' && selection.id === c.m.id ? ' is-selected' : ''}${c.m.dateBasis !== 'proposed' ? ' ms-meeting' : ''}${editMode ? ' is-editable' : ''}${isEdited(c.m.id) ? ' is-edited' : ''}`}
                         style={{ left: c.left, top: c.lane * CHIP_H, width: c.w }}
                         aria-label={`${c.m.id} ${c.m.label}, ${fmtDate(c.m.date)}, สถานะจริงยังไม่ยืนยัน`}
                         aria-haspopup="dialog"
-                        onClick={(e) => { setTip(null); select({ kind: 'milestone', id: c.m.id }, e.currentTarget) }}
-                        {...tipProps(msTip(c.m))}
+                        onClick={clickGuard((el) => { setTip(null); select({ kind: 'milestone', id: c.m.id }, el) })}
+                        onPointerDown={(e) => startDrag(e, c.m.id, 'ms')}
+                        {...dragProps}
+                        {...tipProps(() => msTip(liveMs(msById[c.m.id]), editMode))}
                       >{c.text}</button>
                     ))}
-                    {milestones.map((m) => (
+                    {liveMilestones.map((m) => (
                       <span key={m.id} className={`ms-diamond${m.dateBasis !== 'proposed' ? ' ms-meeting' : ''}${hasFocus ? (lit(m.id) ? ' is-lit' : ' is-dim') : ''}`} style={{ left: xMid(m.date) }} aria-hidden="true" />
                     ))}
                   </div>
@@ -413,15 +583,17 @@ export function InteractiveGantt() {
 
               <div className="g-body" style={{ height: bodyH }}>
                 <div className="g-under" style={{ left: labelW, width: chartW, height: bodyH }} aria-hidden="true">
+                  {monthCells.map((c, i) => i % 2 ? <span key={`b${c.iso}`} className="g-month-band" style={{ left: c.x, width: c.w }} /> : null)}
                   {weekCells.map((c) => <span key={c.iso} className="g-vline" style={{ left: c.x }} />)}
                   {monthCells.map((c) => <span key={c.iso} className="g-vline g-vline-month" style={{ left: c.x }} />)}
-                  {milestones.map((m) => (
+                  {liveMilestones.map((m) => (
                     <span key={m.id} className={`g-msline${hasFocus ? (lit(m.id) ? ' is-lit' : ' is-dim') : ''}`} style={{ left: xMid(m.date) }} />
                   ))}
                   <span className="g-marker-line" style={{ left: xMid(minimumDataMarker.date) }} />
+                  {todayIn && <span className="g-today" style={{ left: xMid(today) }} />}
                 </div>
 
-                {rows.map((r) => {
+                {rows.map((r, ri) => {
                   const w = workstreams.find((x) => x.id === r.ws)!
                   if (r.type === 'ws') {
                     const ts = tasks.filter((t) => t.workstreamId === r.ws)
@@ -439,6 +611,7 @@ export function InteractiveGantt() {
                             <span className="g-title">{narrow ? w.shortTitle : w.title}</span>
                             {supportWs.has(r.ws) && <span className="g-support">support ┄</span>}
                           </button>
+                          {editMode && <button type="button" className="g-add" onClick={() => onAdd(r.ws)} aria-label={`เพิ่ม Task ใน ${w.id}`}><Icon name="plus" size={16} /></button>}
                         </div>
                         <div className="g-lane" style={{ left: labelW, width: chartW }}>
                           {ts.map((t) => renderBar(t, true))}
@@ -448,7 +621,7 @@ export function InteractiveGantt() {
                   }
                   const t = r.task!
                   return (
-                    <div key={r.key} className={`g-row g-row-task${!hasFocus || lit(t.id) ? '' : ' row-dim'}`} style={{ top: r.y, height: r.h }}>
+                    <div key={r.key} className={`g-row g-row-task${ri % 2 ? ' zebra' : ''}${!hasFocus || lit(t.id) ? '' : ' row-dim'}`} style={{ top: r.y, height: r.h }}>
                       <div className="g-label g-label-task" style={{ width: labelW }}>
                         <button type="button" className="g-name" aria-haspopup="dialog" onClick={(e) => select({ kind: 'task', id: t.id }, e.currentTarget)}>
                           <span className="g-id">{t.id}</span>
@@ -487,15 +660,16 @@ export function InteractiveGantt() {
         </div>
 
         <ul className="g-legend" aria-label="คำอธิบายสัญลักษณ์">
+          <li><i className="lg-phase" /> Phase (ตาม Gate)</li>
           <li><i className="lg-bar lg-p0" /> P0 Unblock</li>
           <li><i className="lg-bar lg-p1" /> P1 Core</li>
           <li><i className="lg-bar lg-cand" /> Candidate (เลือกที่ M2)</li>
           <li><i className="lg-bar lg-local" /> อนุมัติแยก · Start TBC</li>
           <li><i className="lg-diamond" /> Proposed Gate</li>
           <li><i className="lg-diamond lg-diamond-meeting" /> Date from Meeting</li>
-          <li><i className="lg-tick" /> In-bar Checkpoint</li>
+          <li><i className="lg-today" /> Today</li>
           <li><i className="lg-solid" /> Must finish first</li>
-          <li><i className="lg-dash" /> Support</li>
+          <li>✎ แก้ไขแล้ว · ⚠ เริ่มก่อนงานก่อนหน้าเสร็จ</li>
         </ul>
         <p className="gantt-foot"><Icon name="calendar" size={16} />1 ต.ค. = วันจากบันทึก · 31 ธ.ค. = กรอบ Reform · วันอื่น = Proposal · ยังไม่มี Gate ใดผ่าน</p>
 

@@ -228,6 +228,74 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   await ctx.close()
 }
 
+// ---------------------------------------------------------------- editing + persistence (local mode)
+{
+  const { ctx, page, errs } = await newPage({ width: 1440, height: 900 }, '#timeline')
+  await page.waitForTimeout(300)
+  await page.click('.seg-edit')
+  await page.click('.gantt-toolbar .seg:text("Expand 21 Tasks")')
+  const bar = page.locator('.g-row-task .bar[aria-label^="T05"]')
+  const before = await bar.getAttribute('aria-label')
+  await bar.scrollIntoViewIfNeeded()
+  const box = await bar.boundingBox()
+  const ppd = (await page.locator('.g-row-task .bar[aria-label^="T01"]').boundingBox()).width / 16
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + ppd * 3.1, box.y + box.height / 2, { steps: 8 })
+  await page.mouse.up()
+  await page.waitForTimeout(100)
+  const after = await bar.getAttribute('aria-label')
+  ok('drag moves T05 by 3 days', before.includes('12–23 ต.ค.') && after.includes('15–26 ต.ค.'), `${before} → ${after}`)
+  ok('drag does not open the panel', !(await page.$('.panel')))
+  ok('moved bar flags conflict with successor', (await page.getAttribute('.g-row-task .bar[aria-label^="T06"]', 'aria-label')).includes('เริ่มก่อน T05'))
+  // resize end grip
+  await page.locator('.g-row-task .bar[aria-label^="T13"]').scrollIntoViewIfNeeded()
+  const b2 = await page.locator('.g-row-task .bar[aria-label^="T13"]').boundingBox()
+  await page.mouse.move(b2.x + b2.width - 4, b2.y + b2.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(b2.x + b2.width - 4 + ppd * 2.1, b2.y + b2.height / 2, { steps: 6 })
+  await page.mouse.up()
+  ok('end grip extends T13 by 2 days', (await page.getAttribute('.g-row-task .bar[aria-label^="T13"]', 'aria-label')).includes('24 ก.ย. – 11 ต.ค.'))
+  // milestone drag
+  await page.locator('.ms-chip[aria-label^="M4"]').scrollIntoViewIfNeeded()
+  const chip = await page.locator('.ms-chip[aria-label^="M4"]').boundingBox()
+  await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(chip.x + chip.width / 2 + ppd * 7.1, chip.y + chip.height / 2, { steps: 6 })
+  await page.mouse.up()
+  ok('drag moves M4 by a week', (await page.getAttribute('.ms-chip[aria-label^="M4"]', 'aria-label')).includes('20 พ.ย.'))
+  // text edit via panel
+  await page.click('.g-row-task .g-name:has-text("T02")')
+  await page.fill('#ef-T02-title', 'Roles / JD / KPI (Rev)')
+  await page.press('#ef-T02-title', 'Enter')
+  ok('title edit shows on the chart', (await page.textContent('.g-row-task:has(.g-id:text-is("T02")) .g-title')).includes('(Rev)'))
+  await page.keyboard.press('Escape')
+  // undo last change
+  await page.click('.seg:text("↶ Undo")')
+  ok('undo reverts title', !(await page.textContent('.g-row-task:has(.g-id:text-is("T02")) .g-title')).includes('(Rev)'))
+  // add task
+  await page.click('.g-add[aria-label="เพิ่ม Task ใน R4"]')
+  ok('add task creates N1', !!(await page.$('.g-row-task .bar[aria-label^="N1"]')))
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(600)
+  ok('save chip says saved', /Saved/.test(await page.textContent('.save-chip')))
+  // reload: edits persist
+  await page.reload()
+  await page.waitForSelector('#timeline .g-row')
+  await page.click('.gantt-toolbar .seg:text("Expand 22 Tasks")')
+  ok('after reload T05 keeps new dates', (await page.getAttribute('.g-row-task .bar[aria-label^="T05"]', 'aria-label')).includes('15–26 ต.ค.'))
+  ok('after reload M4 keeps new date', (await page.getAttribute('.ms-chip[aria-label^="M4"]', 'aria-label')).includes('20 พ.ย.'))
+  ok('after reload added task kept', !!(await page.$('.g-row-task .bar[aria-label^="N1"]')))
+  // reset all
+  await page.click('.seg-edit')
+  await page.click('.seg:text("Reset all")')
+  await page.click('.confirm .seg.danger')
+  ok('reset all restores baseline', (await page.getAttribute('.g-row-task .bar[aria-label^="T05"]', 'aria-label')).includes('12–23 ต.ค.') && !(await page.$('.g-row-task .bar[aria-label^="N1"]')))
+  await page.screenshot({ path: `${OUT}/1440-edit.png` })
+  ok('edit: no console errors', errs.length === 0, errs.join(' | '))
+  await ctx.close()
+}
+
 await browser.close()
 server.kill()
 

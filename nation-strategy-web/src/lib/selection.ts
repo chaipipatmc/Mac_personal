@@ -43,7 +43,7 @@ export function parseHash(hash: string): Route {
   const task = p.get('task')
   if (ws && /^R[1-7]$/.test(ws)) focus.workstream = ws as WorkstreamId
   if (ms && /^M[0-7]$/.test(ms)) focus.milestone = ms as MilestoneId
-  if (task && /^T(0[1-9]|1\d|2[01])$/.test(task)) focus.task = task
+  if (task && /^(T(0[1-9]|1\d|2[01])|N\d{1,4})$/.test(task)) focus.task = task
   return { scene, focus }
 }
 

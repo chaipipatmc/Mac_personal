@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { getRestoredUi, getVersion, registerUiPart, subscribe } from './lib/planStore'
 import { AppContext, type AppApi } from './lib/appContext'
 import { SCENES, buildHash, parseHash, type SceneId, type Selection, type TimelineFocus } from './lib/selection'
 import { TopBar, BottomNav } from './components/Navigation'
@@ -32,9 +33,15 @@ function selectionFromFocus(focus: TimelineFocus): Selection | null {
 const TIMELINE_KINDS = new Set(['task', 'milestone', 'workstream'])
 
 export default function App() {
-  const initial = useMemo(() => parseHash(window.location.hash), [])
+  const restored = useMemo(() => getRestoredUi<{ scene?: SceneId; scrollY?: number; editMode?: boolean; selection?: Selection | null }>('app'), [])
+  const initial = useMemo(() => {
+    const r = parseHash(window.location.hash)
+    return restored?.scene && !window.location.hash ? { ...r, scene: restored.scene } : r
+  }, [restored])
+  const planVersion = useSyncExternalStore(subscribe, getVersion)
+  const [editMode, setEditMode] = useState<boolean>(() => !!restored?.editMode)
   const [active, setActive] = useState<SceneId>(initial.scene)
-  const [selection, setSelection] = useState<Selection | null>(() => selectionFromFocus(initial.focus))
+  const [selection, setSelection] = useState<Selection | null>(() => restored?.selection ?? selectionFromFocus(initial.focus))
   const [timelineFocus, setTimelineFocus] = useState<TimelineFocus>(initial.focus)
   const triggerRef = useRef<HTMLElement | null>(null)
   const lockSpyUntil = useRef(0)
@@ -84,9 +91,19 @@ export default function App() {
     if (t && document.contains(t)) t.focus({ preventScroll: true })
   }, [])
 
+  // Stash what a save-triggered reload should bring back.
+  const uiRef = useRef({ active, editMode, selection })
+  uiRef.current = { active, editMode, selection }
+  useEffect(() => registerUiPart('app', () => ({
+    scene: uiRef.current.active, scrollY: window.scrollY, editMode: uiRef.current.editMode, selection: uiRef.current.selection,
+  })), [])
+
   // Initial scroll + Back/Forward.
   useEffect(() => {
-    if (window.location.hash) requestAnimationFrame(() => scrollToScene(initial.scene, false))
+    if (restored?.scrollY !== undefined) {
+      lockSpyUntil.current = Date.now() + 900
+      requestAnimationFrame(() => window.scrollTo(0, restored.scrollY!))
+    } else if (window.location.hash) requestAnimationFrame(() => scrollToScene(initial.scene, false))
     const onPop = () => {
       const r = parseHash(window.location.hash)
       scrollToScene(r.scene, false)
@@ -95,7 +112,7 @@ export default function App() {
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
-  }, [initial.scene, scrollToScene, applyFocus])
+  }, [initial.scene, scrollToScene, applyFocus, restored])
 
   // Keep a shareable hash for the Timeline selection.
   useEffect(() => {
@@ -147,7 +164,8 @@ export default function App() {
   const api: AppApi = useMemo(() => ({
     selection, select, close, goScene, openInTimeline, timelineFocus,
     isSelected: (kind, id) => selection?.kind === kind && selection.id === id,
-  }), [selection, select, close, goScene, openInTimeline, timelineFocus])
+    planVersion, editMode, setEditMode,
+  }), [selection, select, close, goScene, openInTimeline, timelineFocus, planVersion, editMode])
 
   return (
     <AppContext.Provider value={api}>

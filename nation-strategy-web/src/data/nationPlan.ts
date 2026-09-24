@@ -70,6 +70,10 @@ export interface Task {
   id: string
   workstreamId: WorkstreamId
   title: string
+  /** Short bar label (≤ ~14 chars) used when the bar is narrow. */
+  short?: string
+  /** True for tasks added later in the editor (not in the E01 seed). */
+  custom?: boolean
   start: string
   end: string
   priority: PriorityId
@@ -441,7 +445,7 @@ const task = (t: Omit<Task, 'actualStart' | 'actualEnd' | 'progressPercent' | 'd
 
 export const tasks: Task[] = [
   // R1
-  task({ id: 'T01', workstreamId: 'R1', title: 'Baseline: Work–People–Knowledge', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
+  task({ id: 'T01', workstreamId: 'R1', title: 'Baseline Survey', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'Baseline งาน–คน–ความรู้สำคัญ ความเสี่ยง และ Scope ที่เสนอ', acceptance: 'ข้อมูลพอให้ M2 ยืนยัน Scope และทรัพยากร', note: 'สำรวจ Baseline/ความเสี่ยง/Scope เพื่อ M2' }),
   task({ id: 'T02', workstreamId: 'R1', title: 'Roles / JD / KPI', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T01', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'บทบาท/JD/KPI, Career Path และ Knowledge plan', acceptance: 'รับรอง Workflow/Career Path/Knowledge plan ที่ M3', note: 'ออกแบบคู่กับ Workflow ของ R2' }),
@@ -499,6 +503,14 @@ export const tasks: Task[] = [
   task({ id: 'T21', workstreamId: 'R7', title: 'Local Pilot (if approved)', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T20'], checkpoints: [], conditionalOn: 'LOCAL_APPROVAL',
     deliverable: 'Pilot ปัตตานี–ยะลา–นราธิวาส และผลประเมินต้นทุน/รายได้จริง', acceptance: 'ประเมินรายได้จริงก่อนตัดสินใจขยาย', note: 'อนุมัติธุรกิจแยก; วันเริ่มจริงรอยืนยัน; ไม่ขึ้นกับ M4/M5 ของ AI' }),
 ]
+
+const SHORT: Record<string, string> = {
+  T01: 'Baseline', T02: 'Roles/KPI', T03: 'Transfer → Transition', T04: 'Review', T05: 'Design', T06: 'AI Support W1',
+  T07: 'Systems', T08: 'Design', T09: 'Integrate → Handover', T10: 'Archive', T11: 'CMS Design', T12: 'Content W1',
+  T13: 'Community', T14: 'Event Design', T15: 'Audience W1', T16: 'Screening', T17: 'AE / QC', T18: 'Gov W1',
+  T19: 'Cost / Rights', T20: 'Approval', T21: 'Local Pilot',
+}
+for (const t of tasks) t.short = SHORT[t.id]
 
 export const relations: Relation[] = [
   { from: 'R1', to: 'R2', type: 'enables', bidirectional: true, shortReason: 'ออกแบบคนกับงานร่วมกัน — สนับสนุน ไม่ใช่ dependency วน', proposalBasis: 'proposal' },
