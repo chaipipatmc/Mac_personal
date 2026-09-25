@@ -7,17 +7,20 @@ import {
 import { dayNumber, fmtDate, fmtRange, isoFromDay, monthShort } from '../lib/dates'
 import { relatedTo } from '../lib/graph'
 import {
-  addTask, canUndo, editCount, getRestoredUi, getSaveState, isEdited, patchMilestone, patchTask,
-  registerUiPart, resetAll, saveNow, setDragging, undo,
+  addTask, getRestoredUi, isEdited, patchMilestone, patchTask, registerUiPart, setDragging,
 } from '../lib/planStore'
 import { SceneShell } from './SceneShell'
+import { E } from './Editable'
 import { Icon, WS_ICON } from './Icon'
 
 // Chart domain starts on the Monday before the roadmap; it grows if an edit moves work past 31 Dec.
 const DOMAIN_START = dayNumber('2026-09-21')
 
-type Zoom = 'overview' | 'month' | 'week'
-const ZOOM_LABEL: Record<Zoom, string> = { overview: 'Overview', month: 'Month', week: 'Week' }
+type Zoom = 'overview' | 'month' | 'week' | 'custom'
+const ZOOM_LABEL: Record<Exclude<Zoom, 'custom'>, string> = { overview: 'Overview', month: 'Month', week: 'Week' }
+const MIN_PX = 2
+const MAX_PX = 64
+const H_KEY = 'nation-gantt-height'
 type CandFilter = 'all' | CandidateId | 'LOCAL'
 type DragKind = 'move' | 'start' | 'end' | 'ms'
 interface Drag { id: string; kind: DragKind; x0: number; delta: number; moved: boolean }
@@ -71,15 +74,9 @@ function msTip(m: Milestone, editing: boolean) {
   return [`${m.id} ${m.label}`, `${fmtDate(m.date)} · ${isEdited(m.id) ? 'แก้ไขแล้ว' : m.dateBasis === 'proposed' ? 'วันที่เสนอ' : m.dateBasis === 'meeting_date' ? 'วันที่ในบันทึก' : 'กรอบสิ้นปีจากประชุม'}`, 'Status: TBC', editing ? 'ลากซ้าย–ขวาเพื่อย้ายวัน' : 'แตะ/คลิกเพื่อดู Details']
 }
 
-function timeAgo(iso: string | null) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return `${d.getDate()} ${monthShort(d.getMonth() + 1)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
 export function InteractiveGantt() {
-  const { select, selection, timelineFocus, close, planVersion, editMode, setEditMode } = useApp()
-  const restored = useMemo(() => getRestoredUi<{ zoom?: Zoom; expanded?: WorkstreamId[]; left?: number; top?: number }>('gantt'), [])
+  const { select, selection, timelineFocus, close, planVersion, editMode } = useApp()
+  const restored = useMemo(() => getRestoredUi<{ zoom?: Zoom; px?: number; expanded?: WorkstreamId[]; left?: number; top?: number; maxed?: boolean }>('gantt'), [])
   const scrollRef = useRef<HTMLDivElement>(null)
   const [viewW, setViewW] = useState(1000)
   const [zoom, setZoom] = useState<Zoom>(() => restored?.zoom ?? (window.innerWidth < 760 ? 'month' : 'overview'))
@@ -89,12 +86,15 @@ export function InteractiveGantt() {
   const [candFilter, setCandFilter] = useState<CandFilter>('all')
   const [tip, setTip] = useState<{ lines: string[]; x: number; y: number } | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
-  const [confirmReset, setConfirmReset] = useState(false)
+  const [customPx, setCustomPx] = useState<number>(() => restored?.px ?? 10)
+  const [maxed, setMaxed] = useState<boolean>(() => !!restored?.maxed)
+  const [chartH, setChartH] = useState<number | null>(() => {
+    try { const v = Number(localStorage.getItem(H_KEY)); return v >= 200 ? v : null } catch { return null }
+  })
   const suppressClick = useRef(false)
 
   const narrow = viewW < 640
   const labelW = narrow ? 128 : 236
-  const save = getSaveState()
 
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -107,10 +107,10 @@ export function InteractiveGantt() {
   }, [restored])
 
   // Survive the reload a save triggers.
-  const uiRef = useRef({ zoom, expanded })
-  uiRef.current = { zoom, expanded }
+  const uiRef = useRef({ zoom, expanded, customPx, maxed })
+  uiRef.current = { zoom, expanded, customPx, maxed }
   useEffect(() => registerUiPart('gantt', () => ({
-    zoom: uiRef.current.zoom, expanded: [...uiRef.current.expanded],
+    zoom: uiRef.current.zoom, px: uiRef.current.customPx, maxed: uiRef.current.maxed, expanded: [...uiRef.current.expanded],
     left: scrollRef.current?.scrollLeft ?? 0, top: scrollRef.current?.scrollTop ?? 0,
   })), [])
 
@@ -128,11 +128,68 @@ export function InteractiveGantt() {
   const DOMAIN_END = lastDay + 1
   const DAYS = DOMAIN_END - DOMAIN_START
 
-  const pxPerDay = zoom === 'overview' ? Math.max(3, (viewW - labelW - 4) / DAYS) : zoom === 'month' ? 10 : 26
+  const fitPx = Math.max(MIN_PX, (viewW - labelW - 4) / DAYS)
+  const pxPerDay = zoom === 'overview' ? fitPx : zoom === 'month' ? 10 : zoom === 'week' ? 26 : customPx
   const chartW = Math.round(DAYS * pxPerDay)
   const xOf = (iso: string) => (dayNumber(iso) - DOMAIN_START) * pxPerDay
   /** Center of a calendar day (used for milestones). */
   const xMid = (iso: string) => xOf(iso) + pxPerDay / 2
+
+  // ---- zoom in/out (buttons, Ctrl/⌘ + wheel) keeps the point under focus in place
+  const pxRef = useRef(pxPerDay)
+  pxRef.current = pxPerDay
+  const zoomBy = (factor: number, anchorClientX?: number) => {
+    const el = scrollRef.current
+    const cur = pxRef.current
+    const next = Math.min(MAX_PX, Math.max(MIN_PX, cur * factor))
+    if (!el || next === cur) return
+    const rect = el.getBoundingClientRect()
+    const ax = anchorClientX !== undefined ? anchorClientX - rect.left - labelW : (el.clientWidth - labelW) / 2
+    const day = (el.scrollLeft + Math.max(0, ax)) / cur
+    setCustomPx(next); setZoom('custom')
+    requestAnimationFrame(() => el.scrollTo({ left: Math.max(0, day * next - Math.max(0, ax)) }))
+  }
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return
+      e.preventDefault()
+      zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [labelW])
+
+  // ---- resizable / maximisable chart window
+  const startResize = (e: React.PointerEvent<HTMLElement>) => {
+    const el = scrollRef.current
+    if (!el) return
+    e.preventDefault()
+    const y0 = e.clientY
+    const h0 = el.getBoundingClientRect().height
+    const target = e.currentTarget
+    target.setPointerCapture?.(e.pointerId)
+    const move = (ev: PointerEvent) => setChartH(Math.round(Math.min(window.innerHeight * 2, Math.max(200, h0 + ev.clientY - y0))))
+    const up = () => {
+      target.removeEventListener('pointermove', move); target.removeEventListener('pointerup', up); target.removeEventListener('pointercancel', up)
+      try { localStorage.setItem(H_KEY, String(Math.round(scrollRef.current?.getBoundingClientRect().height ?? 0))) } catch { /* optional */ }
+    }
+    target.addEventListener('pointermove', move); target.addEventListener('pointerup', up); target.addEventListener('pointercancel', up)
+  }
+  const nudgeHeight = (d: number) => {
+    const h = Math.round(Math.max(200, (scrollRef.current?.getBoundingClientRect().height ?? 400) + d))
+    setChartH(h)
+    try { localStorage.setItem(H_KEY, String(h)) } catch { /* optional */ }
+  }
+  useEffect(() => {
+    if (!maxed) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('.panel, .text-editor')) setMaxed(false) }
+    window.addEventListener('keydown', onKey)
+    document.body.classList.add('gantt-maxed')
+    return () => { window.removeEventListener('keydown', onKey); document.body.classList.remove('gantt-maxed') }
+  }, [maxed])
 
   // ---- filters -------------------------------------------------------------
   const filterActive = wsFilter !== 'all' || prioFilter !== 'all' || candFilter !== 'all'
@@ -422,47 +479,27 @@ export function InteractiveGantt() {
     )
   }
 
-  const statusText = save.status === 'saving' ? (save.message || 'Saving…')
-    : save.status === 'dirty' ? (save.message || 'มีการแก้ไข — จะบันทึกอัตโนมัติ')
-      : save.status === 'readonly' ? save.message
-        : save.status === 'error' ? save.message
-          : save.savedAt ? `Saved ${timeAgo(save.savedAt)}${save.mode === 'local' ? ' (ในเบราว์เซอร์นี้)' : ''}` : 'Baseline — ยังไม่มีการแก้ไข'
-
   return (
     <SceneShell
       id="timeline"
       wide
       headline="Timeline ก.ย.–ธ.ค. 2026"
       badges={['proposal', 'meeting']}
-      intro={<p className="plan-warning"><strong>Plan — ไม่ใช่ Progress จริง</strong> · แตะแถบหรือ ◆ เพื่อดู Details · กด Edit เพื่อลากปรับ</p>}
+      intro={<p className="plan-warning"><strong><E k="timeline.warning" v="Plan — ไม่ใช่ Progress จริง" label="Warning" /></strong> · <E k="timeline.intro" v="แตะแถบหรือ ◆ เพื่อดู Details · โหมด Edit ลากปรับได้" label="Intro" /></p>}
       takeaway="ทุก Gate มี Deliverable + เงื่อนไข — ไม่ใช่แค่ถึงวันที่"
     >
-      <div className={`gantt${editMode ? ' is-edit' : ''}`}>
-        <div className="edit-bar" role="group" aria-label="แก้ไขแผน">
-          <button type="button" className={`seg seg-edit${editMode ? ' on' : ''}`} aria-pressed={editMode} onClick={() => setEditMode(!editMode)} disabled={save.status === 'readonly'}>
-            <Icon name={editMode ? 'check' : 'review'} size={18} />{editMode ? 'Done' : 'Edit'}
-          </button>
-          <span className={`save-chip save-${save.status}`} role="status" aria-live="polite">
-            <span className="save-dot" aria-hidden="true" />{statusText}
-          </span>
-          {editMode && (
-            <>
-              <button type="button" className="seg" onClick={undo} disabled={!canUndo()}>↶ Undo</button>
-              {(save.status === 'dirty' || save.status === 'error') && <button type="button" className="seg" onClick={() => void saveNow()}>Save now</button>}
-              {editCount() > 0 && (confirmReset
-                ? <span className="confirm"><span>คืนค่าเดิมทั้งหมด?</span><button type="button" className="seg danger" onClick={() => { resetAll(); setConfirmReset(false) }}>Reset</button><button type="button" className="seg" onClick={() => setConfirmReset(false)}>Cancel</button></span>
-                : <button type="button" className="seg" onClick={() => setConfirmReset(true)}>Reset all</button>)}
-              <span className="edit-hint">ลากแถบ = ย้าย · ลากขอบ = ปรับวัน · ลาก ◆ = ย้าย Gate · แตะเพื่อแก้คำ</span>
-            </>
-          )}
-        </div>
+      <div className={`gantt${editMode ? ' is-edit' : ''}${maxed ? ' is-max' : ''}`}>
+        {editMode && <p className="gantt-edit-hint" role="note"><Icon name="review" size={16} />ลากแถบ = ย้าย · ลากขอบ = ปรับวัน · ลาก ◆ = ย้าย Gate · ปุ่ม + = เพิ่ม Task · แตะแถบเพื่อแก้คำ/Owner</p>}
 
         <div className="gantt-toolbar" role="toolbar" aria-label="ควบคุม Timeline">
           <div className="tb-group" role="group" aria-label="ซูม">
             <span className="tb-label">Zoom</span>
-            {(Object.keys(ZOOM_LABEL) as Zoom[]).map((z) => (
+            <button type="button" className="seg seg-icon" onClick={() => zoomBy(1 / 1.4)} aria-label="Zoom out" disabled={pxPerDay <= MIN_PX}>−</button>
+            <button type="button" className="seg seg-icon" onClick={() => zoomBy(1.4)} aria-label="Zoom in" disabled={pxPerDay >= MAX_PX}>+</button>
+            {(Object.keys(ZOOM_LABEL) as Exclude<Zoom, 'custom'>[]).map((z) => (
               <button key={z} type="button" className="seg" aria-pressed={zoom === z} onClick={() => setZoom(z)}>{ZOOM_LABEL[z]}</button>
             ))}
+            <span className="zoom-read" aria-live="polite">{Math.round(pxPerDay * 7)} px/สัปดาห์</span>
           </div>
           <div className="tb-group" role="group" aria-label="ไปยังเดือน">
             <span className="tb-label">Jump</span>
@@ -503,6 +540,7 @@ export function InteractiveGantt() {
             </button>
             {filterActive && <button type="button" className="seg" onClick={clearFilters}>Clear Filters</button>}
             {hasFocus && <button type="button" className="seg" onClick={close}>Clear Selection</button>}
+            <button type="button" className="seg" aria-pressed={maxed} onClick={() => setMaxed(!maxed)}>{maxed ? '⤡ Exit full view' : '⤢ Maximize'}</button>
           </div>
         </div>
 
@@ -525,8 +563,8 @@ export function InteractiveGantt() {
             className={`gantt-scroll${hasFocus ? ' has-focus' : ''}${drag ? ' is-dragging' : ''}`}
             ref={scrollRef}
             tabIndex={0}
-            aria-label="แผนภูมิ Gantt — เลื่อนแนวนอนเพื่อดูช่วงเวลา"
-            style={{ ['--label-w' as string]: `${labelW}px` }}
+            aria-label="แผนภูมิ Gantt — เลื่อนแนวนอนเพื่อดูช่วงเวลา · Ctrl/⌘ + scroll เพื่อซูม"
+            style={{ ['--label-w' as string]: `${labelW}px`, ...(chartH && !maxed ? { height: chartH, maxHeight: 'none' } : {}) }}
           >
             <div className="g-inner" style={{ width: labelW + chartW }}>
               <div className="g-header">
@@ -651,6 +689,14 @@ export function InteractiveGantt() {
             </div>
           </div>
 
+          {!maxed && (
+            <div className="g-resize" role="separator" aria-orientation="horizontal" aria-label="ปรับความสูง Timeline (ลาก หรือใช้ลูกศรขึ้น/ลง)" tabIndex={0}
+              onPointerDown={startResize}
+              onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); nudgeHeight(40) } if (e.key === 'ArrowUp') { e.preventDefault(); nudgeHeight(-40) } }}
+              onDoubleClick={() => { setChartH(null); try { localStorage.removeItem(H_KEY) } catch { /* optional */ } }}>
+              <span aria-hidden="true" />
+            </div>
+          )}
           <aside className="p3-box">
             <h3><Icon name="scale" size={18} />P3 Scale Later</h3>
             <p className="muted">ยังไม่กำหนดวัน · ตัดสินจากผล Pilot</p>

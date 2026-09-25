@@ -1,6 +1,7 @@
 import { useApp } from '../lib/appContext'
 import { meta, outcomes, pillars } from '../data/nationPlan'
 import { SceneShell } from './SceneShell'
+import { E } from './Editable'
 import { Icon, type IconName } from './Icon'
 
 const OUTCOME_ICON: Record<string, IconName> = { O1: 'agile', O2: 'link', O3: 'growth' }
@@ -19,7 +20,7 @@ export function DirectionScene() {
       chapter="A · From Meeting"
       headline="Nation → Media Tech"
       badges={['meeting']}
-      intro={<p className="lede">{meta.keyMessage}</p>}
+      intro={<p className="lede"><E k="direction.intro" v={meta.keyMessage} label="Key message" multiline /></p>}
       takeaway="เปลี่ยนทั้งองค์กรและ Business Model — ไม่ใช่แค่เพิ่ม AI Tools"
     >
       <div className="direction">
@@ -41,9 +42,9 @@ export function DirectionScene() {
                 aria-haspopup="dialog"
               >
                 <span className="outcome-ico"><Icon name={OUTCOME_ICON[o.id]} size={30} /></span>
-                <span className="outcome-label">{o.label}</span>
+                <E as="span" className="outcome-label" k={`outcome.${o.id}.label`} v={o.label} label="Outcome" />
                 <span className="icon-tags">
-                  {o.expands.map((t) => <span key={t} className="itag"><Icon name={TAG_ICON[t] ?? 'plus'} size={16} />{t}</span>)}
+                  {o.expands.map((t, ti) => <span key={t} className="itag"><Icon name={TAG_ICON[t] ?? 'plus'} size={16} /><E k={`outcome.${o.id}.tag${ti}`} v={t} label="Tag" /></span>)}
                 </span>
                 <span className="more-cue">Details</span>
               </button>
@@ -52,7 +53,7 @@ export function DirectionScene() {
         </ul>
         <div className="pillars" aria-label="องค์ประกอบของการเปลี่ยน">
           {pillars.map((p, i) => (
-            <span key={p} className="pillar"><Icon name={PILLAR_ICON[p]} size={18} />{p}{i < pillars.length - 1 && <span className="plus" aria-hidden="true">+</span>}</span>
+            <span key={p} className="pillar"><Icon name={PILLAR_ICON[p]} size={18} /><E k={`pillar.${i}`} v={p} label="Pillar" />{i < pillars.length - 1 && <span className="plus" aria-hidden="true">+</span>}</span>
           ))}
         </div>
       </div>

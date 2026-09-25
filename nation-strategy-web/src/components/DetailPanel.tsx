@@ -4,6 +4,10 @@ import { getDetail, type Field, type LinkItem } from '../data/details'
 import { sourceById, taskById } from '../data/nationPlan'
 import { Badge } from './Badge'
 import { EditForm } from './EditForm'
+import { E } from './Editable'
+import { patchMilestone, patchTask, patchWorkstream } from '../lib/planStore'
+import type { Selection } from '../lib/selection'
+import { msById, wsById, type MilestoneId, type WorkstreamId } from '../data/nationPlan'
 
 const ROWS = [
   ['what', 'What'],
@@ -16,18 +20,33 @@ const ROWS = [
   ['pending', 'TBC'],
 ] as const
 
-function FieldView({ field }: { field: Field }) {
+/** Owner text lives in plan data for tasks, milestones and workstreams; everything else is a wording override. */
+function ownerBinding(sel: Selection): { value: string; onSave: (v: string) => void } | null {
+  if (sel.kind === 'task' && taskById[sel.id]) return { value: taskById[sel.id].owner ?? wsById[taskById[sel.id].workstreamId].ownerLabel, onSave: (v) => patchTask(sel.id, { owner: v }) }
+  if (sel.kind === 'milestone') return { value: msById[sel.id as MilestoneId].owner, onSave: (v) => patchMilestone(sel.id as MilestoneId, { owner: v }) }
+  if (sel.kind === 'workstream') return { value: wsById[sel.id as WorkstreamId].ownerLabel, onSave: (v) => patchWorkstream(sel.id as WorkstreamId, { ownerLabel: v }) }
+  return null
+}
+
+function FieldView({ field, k, owner, open }: { field: Field; k: string; owner?: { value: string; onSave: (v: string) => void } | null; open?: boolean }) {
   return (
     <>
-      <p>{field.text}</p>
+      <p>{owner ? <E value={owner.value} onSave={owner.onSave} label="Owner" multiline /> : <E k={k} v={field.text} label="Detail" multiline />}</p>
       {field.more && (
-        <details className="more">
+        <details className="more" open={open}>
           <summary>More ({field.more.length})</summary>
-          <ul>{field.more.map((m) => <li key={m}>{m}</li>)}</ul>
+          <ul>{field.more.map((m, i) => <li key={m}><E k={`${k}.more${i}`} v={m} label="Detail" multiline /></li>)}</ul>
         </details>
       )}
     </>
   )
+}
+
+function titleBinding(sel: Selection, fallback: string) {
+  if (sel.kind === 'task' && taskById[sel.id]) return <E value={taskById[sel.id].title} onSave={(v) => patchTask(sel.id, { title: v })} label="Title" />
+  if (sel.kind === 'milestone') return <E value={msById[sel.id as MilestoneId].label} onSave={(v) => patchMilestone(sel.id as MilestoneId, { label: v })} label="Label" />
+  if (sel.kind === 'workstream') return <E value={wsById[sel.id as WorkstreamId].title} onSave={(v) => patchWorkstream(sel.id as WorkstreamId, { title: v })} label="Title" />
+  return <E k={`d.${sel.kind}.${sel.id}.title`} v={fallback} label="Title" />
 }
 
 function Links({ items }: { items?: LinkItem[] }) {
@@ -72,7 +91,7 @@ export function DetailPanel() {
         <header className="panel-head">
           <div>
             <p className="panel-kind">{d.kindLabel}{d.code ? ` · ${d.code}` : ''}</p>
-            <h2 id="panel-title" ref={headRef} tabIndex={-1}>{d.title}</h2>
+            <h2 id="panel-title" ref={headRef} tabIndex={-1}>{titleBinding(selection, d.title)}</h2>
             <div className="badges">{d.badges.map((b) => <Badge key={b} kind={b} small />)}</div>
           </div>
           <button type="button" className="panel-close" onClick={close} aria-label="ปิดรายละเอียด (Esc)">✕<span className="sr-only"> ปิด</span></button>
@@ -86,7 +105,7 @@ export function DetailPanel() {
                 <div key={k} className={`drow drow-${k}`}>
                   <dt>{label}</dt>
                   <dd>
-                    {field ? <FieldView field={field} /> : <p className="muted">—</p>}
+                    {field ? <FieldView field={field} k={`d.${selection.kind}.${selection.id}.${k}`} owner={k === 'owner' ? ownerBinding(selection) : null} open={editMode} /> : <p className="muted">—</p>}
                     {k === 'prereq' && <Links items={d.prereqLinks} />}
                     {k === 'unlocks' && <Links items={d.unlockLinks} />}
                   </dd>

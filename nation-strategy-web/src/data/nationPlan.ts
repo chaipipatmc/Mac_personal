@@ -74,6 +74,8 @@ export interface Task {
   short?: string
   /** True for tasks added later in the editor (not in the E01 seed). */
   custom?: boolean
+  /** Person/role responsible for this Work Package (editor field; falls back to the workstream owner). */
+  owner?: string
   start: string
   end: string
   priority: PriorityId

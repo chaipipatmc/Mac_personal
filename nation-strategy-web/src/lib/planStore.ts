@@ -17,8 +17,8 @@ import {
   type Milestone, type MilestoneId, type Task, type Workstream, type WorkstreamId,
 } from '../data/nationPlan'
 
-export type TaskPatch = Partial<Pick<Task, 'title' | 'short' | 'start' | 'end' | 'note' | 'deliverable' | 'acceptance'>>
-export type MilestonePatch = Partial<Pick<Milestone, 'date' | 'label' | 'deliverables' | 'acceptance'>>
+export type TaskPatch = Partial<Pick<Task, 'title' | 'short' | 'start' | 'end' | 'note' | 'deliverable' | 'acceptance' | 'owner'>>
+export type MilestonePatch = Partial<Pick<Milestone, 'date' | 'label' | 'deliverables' | 'acceptance' | 'owner' | 'approver'>>
 export type WorkstreamPatch = Partial<Pick<Workstream, 'title' | 'shortTitle' | 'ownerLabel'>>
 
 export interface PlanEdits {
@@ -27,10 +27,12 @@ export interface PlanEdits {
   workstreams: Record<string, WorkstreamPatch>
   added: Task[]
   removed: string[]
+  /** Wording overrides for any on-page or panel text, keyed by a stable id. */
+  text: Record<string, string>
   savedAt: string | null
 }
 
-const empty = (): PlanEdits => ({ tasks: {}, milestones: {}, workstreams: {}, added: [], removed: [], savedAt: null })
+const empty = (): PlanEdits => ({ tasks: {}, milestones: {}, workstreams: {}, added: [], removed: [], text: {}, savedAt: null })
 
 // Baseline snapshots taken before any edit is applied.
 const baseTasks: Task[] = tasks.map((t) => ({ ...t }))
@@ -62,8 +64,17 @@ export const getSaveState = () => ({ mode: saveMode, status: saveStatus, message
 export const getEdits = () => edits
 export const canUndo = () => undoStack.length > 0
 export const isEdited = (id: string) => !!(edits.tasks[id] || edits.milestones[id] || edits.workstreams[id] || edits.added.some((t) => t.id === id))
+
+/** Wording override for `key`, else the built-in text. */
+export const getText = (key: string, fallback: string) => edits.text[key] ?? fallback
+export const hasText = (key: string) => key in edits.text
+/** Set (or with null, remove) a wording override. */
+export function setText(key: string, value: string | null) {
+  if (value === null ? !(key in edits.text) : edits.text[key] === value) return
+  commit((e) => { if (value === null) delete e.text[key]; else e.text[key] = value })
+}
 export const editCount = () =>
-  Object.keys(edits.tasks).length + Object.keys(edits.milestones).length + Object.keys(edits.workstreams).length + edits.added.length + edits.removed.length
+  Object.keys(edits.tasks).length + Object.keys(edits.milestones).length + Object.keys(edits.workstreams).length + edits.added.length + edits.removed.length + Object.keys(edits.text).length
 
 function sanitize(raw: unknown): PlanEdits {
   const e = empty()
@@ -73,10 +84,10 @@ function sanitize(raw: unknown): PlanEdits {
   const date = (v: unknown) => (typeof v === 'string' && ISO.test(v) ? v : undefined)
   const clean = <T extends object>(o: T) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T
   for (const [id, p] of Object.entries(r.tasks ?? {})) {
-    e.tasks[id] = clean({ title: str(p.title, 120), short: str(p.short, 40), start: date(p.start), end: date(p.end), note: str(p.note), deliverable: str(p.deliverable), acceptance: str(p.acceptance) })
+    e.tasks[id] = clean({ title: str(p.title, 120), short: str(p.short, 40), start: date(p.start), end: date(p.end), note: str(p.note), deliverable: str(p.deliverable), acceptance: str(p.acceptance), owner: str(p.owner, 200) })
   }
   for (const [id, p] of Object.entries(r.milestones ?? {})) {
-    e.milestones[id] = clean({ date: date(p.date), label: str(p.label, 80), deliverables: str(p.deliverables), acceptance: str(p.acceptance) })
+    e.milestones[id] = clean({ date: date(p.date), label: str(p.label, 80), deliverables: str(p.deliverables), acceptance: str(p.acceptance), owner: str(p.owner, 200), approver: str(p.approver, 200) })
   }
   for (const [id, p] of Object.entries(r.workstreams ?? {})) {
     e.workstreams[id] = clean({ title: str(p.title, 80), shortTitle: str(p.shortTitle, 40), ownerLabel: str(p.ownerLabel, 200) })
@@ -86,6 +97,9 @@ function sanitize(raw: unknown): PlanEdits {
     e.added.push(newTask(t.workstreamId, t.id, str(t.title, 120) ?? 'New task', t.start, t.end, str(t.note) ?? ''))
   }
   e.removed = (Array.isArray(r.removed) ? r.removed : []).filter((id) => typeof id === 'string' && /^N\d{1,4}$/.test(id))
+  for (const [k, v] of Object.entries(r.text ?? {})) {
+    if (/^[\w.:-]{1,160}$/.test(k) && typeof v === 'string') e.text[k] = v.slice(0, 2000)
+  }
   e.savedAt = typeof r.savedAt === 'string' ? r.savedAt : null
   return e
 }

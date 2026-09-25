@@ -36,7 +36,18 @@ npm run check        # ทั้งหมด
 - ข้อความในแผงรายละเอียดประกอบจากข้อมูลใน `src/data/details.ts`
 - แก้แล้วรัน `npm run check:data` ทุกครั้ง
 
+## โหมด Present / Edit
+
+ปุ่มมุมขวาบน: **Present** = หน้าสะอาดสำหรับนำเสนอ · **Edit** = หลังบ้าน
+- ข้อความที่มีเส้นประ (หัวข้อ, คำอธิบาย, Key, การ์ด, ป้าย, ช่องในแผงรายละเอียด) คลิกเพื่อแก้คำได้ — `Reset to original` คืนคำเดิม
+- Owner แก้ได้ที่ Task / Milestone / Workstream (ในแผงรายละเอียด)
+- แถบ Edit ด้านล่าง: สถานะบันทึก · Undo · Save now · Reset all · Done → Present
+- คำที่แก้เก็บเป็น `text` overrides ใน `PlanEdits` (key เช่น `timeline.headline`, `d.task.T18.why`)
+
 ## แก้ไข Timeline ในหน้าเว็บ
+
+Zoom: ปุ่ม − / + , Overview / Month / Week หรือ Ctrl/⌘ + scroll บนกราฟ · ปรับความสูงกราฟด้วยแถบใต้กราฟ (ดับเบิลคลิกเพื่อคืนค่า) · ⤢ Maximize เต็มจอ (Esc ออก)
+
 
 กด **Edit** ในฉาก Timeline แล้ว:
 - ลากแถบ = ย้ายทั้งงาน · ลากขอบซ้าย/ขวา = ปรับวันเริ่ม/จบ · ลากป้าย ◆ Milestone = ย้าย Gate

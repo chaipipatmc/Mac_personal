@@ -1,6 +1,7 @@
 import { useApp } from '../lib/appContext'
 import { dependencyPaths, wsById } from '../data/nationPlan'
 import { SceneShell } from './SceneShell'
+import { E } from './Editable'
 import { Icon, type IconName } from './Icon'
 
 const PATH_ICON: Record<string, IconName> = { people: 'people', data: 'data', business: 'growth', local: 'local' }
@@ -46,7 +47,7 @@ export function DependencyMap() {
       id="dependency"
       headline="Dependency Map"
       badges={['proposal']}
-      intro={<p>ลำดับที่เสนอ (ไม่ใช่ Critical Path ที่คำนวณแล้ว) · แตะเพื่อดู Before / Next</p>}
+      intro="ลำดับที่เสนอ (ไม่ใช่ Critical Path ที่คำนวณแล้ว) · แตะเพื่อดู Before / Next"
       takeaway="เชื่อมระบบเท่าที่จำเป็น — ไม่ให้ทุกงานต้องรอกัน"
     >
       <div className="dep-legend" aria-label="คำอธิบายเส้น">
@@ -66,7 +67,7 @@ export function DependencyMap() {
           {dependencyPaths.map((p) => (
             <div key={p.id} className={`dep-path${p.usesR3 ? ' uses-r3' : ''}${hood && hood.path !== p.id ? ' path-dim' : ''}`}>
               <div className="dep-path-head">
-                <h3><Icon name={PATH_ICON[p.id]} size={20} />{p.title}</h3>
+                <h3><Icon name={PATH_ICON[p.id]} size={20} /><E k={`dep.${p.id}.title`} v={p.title} /></h3>
                 {p.usesR3 && <span className="r3-tag">┄ uses R3</span>}
               </div>
               {p.lanes.map((lane, li) => (
@@ -78,14 +79,14 @@ export function DependencyMap() {
                         <button type="button" className="dep-node" aria-haspopup="dialog" aria-pressed={n.id === selectedId} onClick={(e) => select({ kind: 'depnode', id: n.id }, e.currentTarget)}>
                           {hood && n.id === hood.prev && <span className="dep-rel">Before</span>}
                           {hood && n.id === hood.next && <span className="dep-rel">Next</span>}
-                          <span className="dep-label">{NO_SKIP.has(n.id) && <Icon name="lock" size={14} />}{n.label}</span>
+                          <span className="dep-label">{NO_SKIP.has(n.id) && <Icon name="lock" size={14} />}<E k={`dep.${n.id}`} v={n.label} label="Step" /></span>
                         </button>
                       </li>
                     ))}
                   </ol>
                 </div>
               ))}
-              <p className="dep-parallel"><Icon name="parallel" size={16} />{PARALLEL[p.id]}</p>
+              <p className="dep-parallel"><Icon name="parallel" size={16} /><E k={`dep.${p.id}.parallel`} v={PARALLEL[p.id]} /></p>
             </div>
           ))}
         </div>

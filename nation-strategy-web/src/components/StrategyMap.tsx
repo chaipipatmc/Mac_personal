@@ -2,6 +2,8 @@ import { useApp } from '../lib/appContext'
 import { r1DiscussedFunctions, workstreams, type Workstream } from '../data/nationPlan'
 import { SceneShell } from './SceneShell'
 import { Icon, WS_ICON } from './Icon'
+import { E } from './Editable'
+import { patchWorkstream, resetItem } from '../lib/planStore'
 
 function WsNode({ w }: { w: Workstream }) {
   const { select, isSelected, openInTimeline } = useApp()
@@ -11,7 +13,7 @@ function WsNode({ w }: { w: Workstream }) {
         <span className="ws-ico"><Icon name={WS_ICON[w.id]} size={26} /></span>
         <span className="ws-text">
           <span className="ws-id">{w.id}</span>
-          <span className="ws-title">{w.title}</span>
+          <E className="ws-title" value={w.title} onSave={(t) => patchWorkstream(w.id, { title: t })} onReset={() => resetItem(w.id)} label={`${w.id} title`} />
         </span>
       </button>
       <div className="ws-actions">
@@ -37,28 +39,28 @@ export function StrategyMap() {
       id="plan"
       headline="7 Workstreams เดินพร้อมกัน"
       badges={['meeting', 'proposal']}
-      intro={<p>จัดกลุ่มงานจากร่างแผน — ไม่ใช่ 7 หน่วยงานใหม่</p>}
+      intro="จัดกลุ่มงานจากร่างแผน — ไม่ใช่ 7 หน่วยงานใหม่"
       takeaway="BU เป็น Owner ของผลลัพธ์ · Mac เชื่อม Workflow, Data และ AI"
     >
       <div className="smap">
         <div className="smap-top">
           <div className="layer layer-org">
-            <h3 className="layer-h"><Icon name="people" size={18} />Organization</h3>
+            <h3 className="layer-h"><Icon name="people" size={18} /><E k="plan.layer.org" v="Organization" /></h3>
             <div className="layer-nodes">{org.map((w) => <WsNode key={w.id} w={w} />)}</div>
           </div>
           <div className="smap-bridge" aria-label="บทบาท Mac">
             <span className="bridge-line" aria-hidden="true" />
-            <span className="bridge-label"><Icon name="link" size={20} />Mac<br /><small>Integrator</small></span>
+            <span className="bridge-label"><Icon name="link" size={20} /><E k="plan.bridge.who" v="Mac" /><small><E k="plan.bridge.role" v="Integrator" /></small></span>
             <span className="bridge-line" aria-hidden="true" />
           </div>
           <div className="layer layer-biz">
-            <h3 className="layer-h"><Icon name="growth" size={18} />Business</h3>
+            <h3 className="layer-h"><Icon name="growth" size={18} /><E k="plan.layer.biz" v="Business" /></h3>
             <div className="layer-nodes">{biz.map((w) => <WsNode key={w.id} w={w} />)}</div>
           </div>
         </div>
         <div className="smap-pillars" aria-hidden="true"><span /><span /><span /><span /></div>
         <div className="layer layer-base">
-          <h3 className="layer-h"><Icon name="stack" size={18} />Shared Foundation</h3>
+          <h3 className="layer-h"><Icon name="stack" size={18} /><E k="plan.layer.base" v="Shared Foundation" /></h3>
           <WsNode w={base} />
         </div>
       </div>

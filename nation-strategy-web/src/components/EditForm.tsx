@@ -37,6 +37,7 @@ export function EditForm({ sel, onRemoved }: { sel: Selection; onRemoved: () => 
           <Field id={`ef-${t.id}-start`} label="Start" type="date" value={t.start} onCommit={(v) => patchTask(t.id, { start: v, end: v > t.end ? v : t.end })} />
           <Field id={`ef-${t.id}-end`} label="End" type="date" value={t.end} min={t.start} onCommit={(v) => { if (v >= t.start) patchTask(t.id, { end: v }) }} />
         </div>
+        <Field id={`ef-${t.id}-owner`} label="Owner (ผู้รับผิดชอบ)" value={t.owner ?? wsById[t.workstreamId].ownerLabel} onCommit={(v) => patchTask(t.id, { owner: v })} />
         <Field id={`ef-${t.id}-note`} label="What (สรุป)" value={t.note} multiline onCommit={(v) => patchTask(t.id, { note: v })} />
         <Field id={`ef-${t.id}-deliv`} label="Deliverable" value={t.deliverable} multiline onCommit={(v) => patchTask(t.id, { deliverable: v })} />
         {base && isEdited(t.id) && <p className="ef-base">Baseline: {fmtDate(base.start, false)} – {fmtDate(base.end, false)} · “{base.title}”</p>}
@@ -57,6 +58,8 @@ export function EditForm({ sel, onRemoved }: { sel: Selection; onRemoved: () => 
         <p className="ef-title">✎ Edit {m.id}{isEdited(m.id) ? ' · แก้ไขแล้ว' : ''}</p>
         <Field id={`ef-${m.id}-label`} label="Label" value={m.label} onCommit={(v) => patchMilestone(m.id, { label: v })} />
         <Field id={`ef-${m.id}-date`} label="Date" type="date" value={m.date} onCommit={(v) => patchMilestone(m.id, { date: v })} />
+        <Field id={`ef-${m.id}-owner`} label="Owner" value={m.owner} onCommit={(v) => patchMilestone(m.id, { owner: v })} />
+        <Field id={`ef-${m.id}-approver`} label="Approver" value={m.approver} onCommit={(v) => patchMilestone(m.id, { approver: v })} />
         <Field id={`ef-${m.id}-deliv`} label="Deliverables" value={m.deliverables} multiline onCommit={(v) => patchMilestone(m.id, { deliverables: v })} />
         {isEdited(m.id) && <p className="ef-base">Baseline: {fmtDate(base.date)} · “{base.label}”</p>}
         {isEdited(m.id) && <div className="ef-actions"><button type="button" className="seg" onClick={() => resetItem(m.id)}>Reset to baseline</button></div>}

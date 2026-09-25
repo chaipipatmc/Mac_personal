@@ -1,6 +1,7 @@
 import { useApp } from '../lib/appContext'
 import { fourC, valueExtras, valuePaths } from '../data/nationPlan'
 import { SceneShell } from './SceneShell'
+import { E } from './Editable'
 import { Badge } from './Badge'
 import { Icon, type IconName } from './Icon'
 
@@ -23,7 +24,7 @@ export function ValueFlow() {
       id="value"
       headline="Data → Business Value"
       badges={['meeting', 'pending']}
-      intro={<p>แนวทาง 4C จากประชุม + 3 Use Cases ที่ต้องพิสูจน์</p>}
+      intro="แนวทาง 4C จากประชุม + 3 Use Cases ที่ต้องพิสูจน์"
       takeaway="Data ต้องเปลี่ยน Workflow, Sales หรือ Business ได้จริง"
     >
       <ol className="fourc" aria-label="ลำดับ 4C">
@@ -36,7 +37,7 @@ export function ValueFlow() {
               onClick={(e) => select({ kind: 'flow', id: n.id }, e.currentTarget)}
             >
               <Icon name={FLOW_ICON[n.id]} size={30} />
-              <span className="fourc-label">{n.label}</span>
+              <E className="fourc-label" k={`flow.${n.id}`} v={n.label} label="4C step" />
             </button>
           </li>
         ))}
@@ -44,7 +45,7 @@ export function ValueFlow() {
 
       <div className="vpaths">
         <div className="vpaths-head">
-          <h3>Pilot Use Cases</h3>
+          <h3><E k="value.usecases" v="Pilot Use Cases" /></h3>
           <Badge kind="proposal" small />
         </div>
         <ul className="vpath-list">
@@ -55,12 +56,12 @@ export function ValueFlow() {
                   {p.steps.map((s, i) => (
                     <span key={s} className="vstep">
                       <span className="vstep-ico"><Icon name={STEP_ICON[s] ?? 'plus'} size={22} /></span>
-                      <span className="vstep-t">{s}</span>
+                      <E className="vstep-t" k={`path.${p.id}.step${i}`} v={s} label="Step" />
                       {i < p.steps.length - 1 && <span className="varrow" aria-hidden="true"><Icon name="arrow" size={18} /></span>}
                     </span>
                   ))}
                 </span>
-                <span className="vpath-proof"><span className="proof-tag">Proof</span>{PROOF[p.id]}</span>
+                <span className="vpath-proof"><span className="proof-tag">Proof</span><E k={`path.${p.id}.proof`} v={PROOF[p.id]} label="Proof" /></span>
               </button>
             </li>
           ))}
@@ -68,7 +69,7 @@ export function ValueFlow() {
         <div className="vextras">
           {valueExtras.map((x) => (
             <button key={x.id} type="button" className={`mini-btn${isSelected('extra', x.id) ? ' is-selected' : ''}`} aria-haspopup="dialog" onClick={(e) => select({ kind: 'extra', id: x.id }, e.currentTarget)}>
-              <Icon name={x.id === 'X1' ? 'content' : 'local'} size={16} />{x.title}
+              <Icon name={x.id === 'X1' ? 'content' : 'local'} size={16} /><E k={`extra.${x.id}`} v={x.title} label="Extra" />
             </button>
           ))}
         </div>

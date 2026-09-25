@@ -4,6 +4,8 @@ import { AppContext, type AppApi } from './lib/appContext'
 import { SCENES, buildHash, parseHash, type SceneId, type Selection, type TimelineFocus } from './lib/selection'
 import { TopBar, BottomNav } from './components/Navigation'
 import { DetailPanel } from './components/DetailPanel'
+import { EditDock } from './components/EditDock'
+import { TextEditor } from './components/Editable'
 import { DirectionScene } from './components/DirectionScene'
 import { StrategyMap } from './components/StrategyMap'
 import { ValueFlow } from './components/ValueFlow'
@@ -158,6 +160,10 @@ export default function App() {
   }, [active])
 
   useEffect(() => {
+    document.body.classList.toggle('edit-mode', editMode)
+  }, [editMode])
+
+  useEffect(() => {
     document.body.classList.toggle('panel-open', !!selection)
   }, [selection])
 
@@ -187,6 +193,8 @@ export default function App() {
       </main>
       <BottomNav active={active} />
       <DetailPanel />
+      <EditDock />
+      <TextEditor />
     </AppContext.Provider>
   )
 }

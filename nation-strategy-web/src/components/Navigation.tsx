@@ -4,6 +4,7 @@ import { SCENES, type SceneId } from '../lib/selection'
 import { meta } from '../data/nationPlan'
 import { fmtDate } from '../lib/dates'
 import { Badge } from './Badge'
+import { ModeSwitch } from './EditDock'
 
 export function TopBar({ active }: { active: SceneId }) {
   const { goScene, select } = useApp()
@@ -32,6 +33,7 @@ export function TopBar({ active }: { active: SceneId }) {
           </ol>
         </nav>
         <StepButtons active={active} />
+        <ModeSwitch />
         <button type="button" className="meta-chip" onClick={(e) => select({ kind: 'about', id: 'about' }, e.currentTarget)}>
           <span className="meta-long">{meta.presenter} · {fmtDate(meta.dataAsOf)}</span>
           <span className="meta-short">{meta.presenter}</span>
