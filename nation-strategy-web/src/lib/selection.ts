@@ -3,7 +3,7 @@ import type { MilestoneId, WorkstreamId } from '../data/nationPlan'
 export type SelKind =
   | 'workstream' | 'task' | 'milestone' | 'outcome' | 'r1func' | 'flow' | 'path' | 'extra'
   | 'priority' | 'candidate' | 'depnode' | 'checkpoint' | 'decision' | 'weekly' | 'p3' | 'about'
-  | 'connected' | 'nid' | 'entities' | 'lineflow' | 'r6track' | 'r5lanes' | 'focus' | 'cp26'
+  | 'connected' | 'nid' | 'iddomain' | 'phase1' | 'idrules' | 'alias' | 'kgraph' | 'lineflow' | 'r6track' | 'r5lanes' | 'focus' | 'cp26'
   | 'issues' | 'owners' | 'backup'
 
 export interface Selection { kind: SelKind; id: string }

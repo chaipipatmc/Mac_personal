@@ -23,6 +23,7 @@ export interface InfoNode {
 
 const D26 = (sections: string, note: string): SourceRef => ({ source: 'D26', sections, note })
 const P26 = (note: string): SourceRef => ({ source: 'P26', note })
+const NIDF = (note: string): SourceRef => ({ source: 'NIDF', note })
 
 // ---- Scene: Connected Organization -----------------------------------------
 
@@ -83,7 +84,7 @@ export const idOutcomes = ['Community', 'Commercial']
 export const nationIdBoxes: InfoNode[] = [
   {
     id: 'identity', label: 'Identity', short: 'คนเดิม ไม่สร้างซ้ำทุกช่องทาง', basis: 'meeting26', workstreamId: 'R5',
-    what: 'Nation สร้าง Person ID ของตน แล้ว Map กับ Brand account, LINE identity, Web account และ Event registration ที่ตรวจสอบได้',
+    what: 'คนหนึ่งคนมี Person ID เดียวใน Nation ID แล้ว Map กับ Brand account, LINE identity, Web account และ Event registration ที่ตรวจสอบได้ (เป็น Alias)',
     why: 'รู้ว่าเป็นคนเดียวกันข้ามแบรนด์/ช่องทาง โดยผู้ใช้ไม่ต้องจำเลข ID (D26 §24)',
     points: ['ผู้ใช้ไม่ต้องเห็นเลข Nation ID แต่ต้องได้รับแจ้งเรื่องการเก็บ/ใช้ข้อมูล', 'LINE เป็น external identity — ไม่ใช่ master key ถาวรของทั้งกลุ่ม', 'Anonymous เป็นสถานะที่ถูกต้องของระบบ'],
     caution: ['ไม่ใช้แนวคิดนี้ซ่อนการติดตาม', 'ไม่ merge คนด้วย display name'],
@@ -104,7 +105,7 @@ export const nationIdBoxes: InfoNode[] = [
     why: 'จัดกลุ่มความสนใจเพื่อเชิญกิจกรรมและทำ Targeted Marketing (D26 §3, §25)',
     points: ['แยก "ผู้ใช้บอกเอง" / "พฤติกรรมที่บันทึกได้" / "AI ประเมิน" พร้อมช่วงเวลาและหลักฐาน', 'ตัวอย่าง Tag ที่ไม่อ่อนไหว: AI · Business · SME · Logistics', 'Tag ข่าวใหม่/ชุดทดลองก่อน ไม่รอ Archive ทั้งหมด (ข้อเสนอ)'],
     caution: ['อ่านหนึ่งข่าวไม่เท่ากับอยากซื้อ', 'Sentiment ของข่าวไม่ใช่ความเห็นของผู้อ่าน', 'ไม่อนุมานความเห็นการเมือง สุขภาพ หรือคุณลักษณะอ่อนไหว'],
-    sourceRefs: [D26('§25', 'ใช้ AI สกัด Entity/Category/Sentiment ของข่าว'), P26('แยกระดับความมั่นใจของ Interest เป็นข้อเสนอ')],
+    sourceRefs: [D26('§25', 'ใช้ AI สกัด Entity/Category/Sentiment ของข่าว'), P26('แยกระดับความมั่นใจของ Interest เป็นข้อเสนอ'), NIDF('Declared / Observed / Inferred — ห้ามรวมเป็น tag เดียว')],
   },
   {
     id: 'activation', label: 'Activation', short: 'ส่งต่อคุณค่าและวัดผล', basis: 'proposal', workstreamId: 'R5',
@@ -116,27 +117,18 @@ export const nationIdBoxes: InfoNode[] = [
   },
 ]
 
-export interface StoryStep { id: string; title: string; detail: string; anonymous?: string; box: string }
+export interface StoryStep { id: string; title: string; detail: string; anonymous?: string; box: string; code: string; anonCode?: string }
 export const storySteps: StoryStep[] = [
-  { id: 's1', box: 'journey', title: 'อ่านข่าว AI จาก LINE', detail: 'รู้ช่องทาง/แคมเปญที่วัดได้ — ยังอาจไม่รู้ตัวตน', anonymous: 'Anonymous: รู้เฉพาะช่องทาง/แคมเปญ' },
-  { id: 's2', box: 'identity', title: 'ยืนยัน/เชื่อมบัญชี', detail: 'เชื่อมเข้า Nation Person ID ตามสิทธิ', anonymous: 'ไม่ Login: ไม่สร้าง Person ID — อ่านต่อได้ตาม UX ที่อนุมัติ' },
-  { id: 's3', box: 'journey', title: 'สมัคร + Check-in Forum', detail: 'ลงทะเบียนกับการเข้าร่วมเป็นคนละ Activity' },
-  { id: 's4', box: 'journey', title: 'สแกน Session เรื่อง AI', detail: 'เก็บหัวข้อและเวลา — ไม่เหมารวมว่าระบบนี้เสร็จแล้ว' },
-  { id: 's5', box: 'interest', title: 'สัญญาณสนใจ AI / Business', detail: 'แสดงเป็น Inference ไม่ใช่เจตนาซื้อที่ยืนยัน' },
-  { id: 's6', box: 'activation', title: 'รับคำเชิญ Briefing และตอบรับ', detail: 'เกิดผลที่ตรวจวัดได้' },
-]
-
-export const entities: { entity: string; role: string }[] = [
-  { entity: 'Person', role: 'ผู้อ่าน ผู้ร่วมงาน ผู้ติดต่อ — ข้อมูลบทบาทพนักงานอยู่ภายใต้สิทธิแยก' },
-  { entity: 'Organization / Customer Account', role: 'องค์กรและความสัมพันธ์ลูกค้า — ไม่ใช่ Person ID' },
-  { entity: 'Content / Topic', role: 'ข่าว คลิป และเรื่องที่เกี่ยวข้อง' },
-  { entity: 'Event / Session', role: 'งานและกิจกรรมย่อย' },
-  { entity: 'Campaign / Opportunity / Project', role: 'ที่มาของการเข้าถึง โอกาสขาย และงานส่งมอบ' },
-  { entity: 'Asset / Document', role: 'ทรัพย์สินและเอกสารที่ระบบงานอ้างอิง' },
+  { id: 's1', code: 'CNT-7281 · EXT-LINE-9282', anonCode: 'CNT-7281 · Anonymous', box: 'journey', title: 'อ่านข่าว AI จาก LINE', detail: 'รู้ช่องทาง/แคมเปญที่วัดได้ — ยังอาจไม่รู้ตัวตน', anonymous: 'Anonymous: รู้เฉพาะช่องทาง/แคมเปญ' },
+  { id: 's2', code: 'EXT-LINE-9282 → PER-00182', anonCode: 'ไม่มี PER', box: 'identity', title: 'ยืนยัน/เชื่อมบัญชี', detail: 'เชื่อมเข้า Person ID ใน Nation ID ตามสิทธิ', anonymous: 'ไม่ Login: ไม่สร้าง Person ID — อ่านต่อได้ตาม UX ที่อนุมัติ' },
+  { id: 's3', code: 'PER-00182 → EVT-001', box: 'journey', title: 'สมัคร + Check-in Forum', detail: 'ลงทะเบียนกับการเข้าร่วมเป็นคนละ Activity' },
+  { id: 's4', code: 'PER-00182 → SES-018 → TOPIC-AI', box: 'journey', title: 'สแกน Session เรื่อง AI', detail: 'เก็บหัวข้อและเวลา — ไม่เหมารวมว่าระบบนี้เสร็จแล้ว' },
+  { id: 's5', code: 'TOPIC-AI · Observed', box: 'interest', title: 'สัญญาณสนใจ AI / Business', detail: 'แสดงเป็น Inference ไม่ใช่เจตนาซื้อที่ยืนยัน' },
+  { id: 's6', code: 'ACT-… (ตอบรับคำเชิญ)', box: 'activation', title: 'รับคำเชิญ Briefing และตอบรับ', detail: 'เกิดผลที่ตรวจวัดได้' },
 ]
 
 export const lineFlow = {
-  verified: ['Login / authorization ใช้งานได้', 'Server ยืนยันตัวตน', 'Map Nation Person ID', 'เก็บ Activity ตามสิทธิ'],
+  verified: ['Login / authorization ใช้งานได้', 'Server ยืนยันตัวตน', 'Map เข้า Person ID (Nation ID)', 'เก็บ Activity ตามสิทธิ'],
   anonymous: ['ยังไม่ยืนยัน / ไม่อนุญาต / ยกเลิก / Session หมดอายุ', 'แสดงเป็น Anonymous หรือขอเชื่อมบัญชีตาม UX ที่อนุมัติ', 'ไม่หยุดการอ่านโดยพลการ'],
   teamReference: 'ภาพทีม: Broadcast → Click → Website → Profile/UTM → GA4/DB → Report (อ้างอิง — ไม่ใช่คำรับรองว่า "ทุกคลิกรู้ว่าเป็นใคร")',
   techFacts: [
@@ -233,4 +225,102 @@ export const openQuestions26 = [
   'วันที่ละเอียดบางรายการ (11/18/21/25 ต.ค., 15/30 พ.ย.) มีเฉพาะใน S26 — ยังไม่ผูกเป็นแผน',
   'ชื่อทีม R6 และคำที่ถอดเสียงคลาดเคลื่อน (R-Client, Cell/Sell Intelligence) — ใช้ชื่อเข้าใจง่ายพร้อม TBC',
   '"~40 โปรแกรม" และปัญหา HR ซับซ้อน เป็นกรณีธุรกิจอื่นใน D26 — ไม่ใช่รายการระบบ Nation',
+]
+
+// ---- Nation ID Framework (NIDF, adapted; all codes are fictional examples) ----
+
+export interface IdItem { code: string; label: string; th: string; ws?: WorkstreamId }
+export interface IdDomain { id: string; label: string; th: string; icon: 'people' | 'building' | 'content' | 'event'; ids: IdItem[]; points: string[]; caution?: string[] }
+
+export const idDomains: IdDomain[] = [
+  { id: 'people', label: 'People', th: 'คน ทุกบทบาท', icon: 'people',
+    ids: [
+      { code: 'Person ID', label: 'Person', th: 'คนหนึ่งคน', ws: 'R5' },
+      { code: 'Audience ID', label: 'Audience', th: 'ผู้ชมที่ยังไม่รู้ตัวจริง', ws: 'R5' },
+      { code: 'Employee ID', label: 'Employee', th: 'พนักงาน Nation', ws: 'R1' },
+    ],
+    points: ['คนเดียวกันมี Person ID เดียว ไม่ว่าจะมาจาก LINE, Web หรือ Event', 'Audience ผูกกับ Person ได้เมื่อมีหลักฐาน/ความยินยอมเท่านั้น'],
+    caution: ['ข้อมูลพนักงานอยู่ภายใต้สิทธิแยก — ไม่รวมกับฐานผู้อ่าน'] },
+  { id: 'business', label: 'Business', th: 'องค์กร ความสัมพันธ์ โอกาส', icon: 'building',
+    ids: [
+      { code: 'Organization ID', label: 'Organization', th: 'บริษัท / หน่วยงานรัฐ / Agency / Partner', ws: 'R6' },
+      { code: 'Customer Account ID', label: 'Customer Account', th: 'ความสัมพันธ์เชิงธุรกิจกับองค์กร', ws: 'R6' },
+      { code: 'Campaign ID', label: 'Campaign', th: 'แคมเปญการตลาด / โฆษณา', ws: 'R6' },
+      { code: 'Project / Opportunity ID', label: 'Opportunity', th: 'ดีล / โอกาส / งานขาย', ws: 'R6' },
+    ],
+    points: ['Organization ID ใช้ร่วมกันระหว่าง Sales, Finance และ Data Hub (R3)', '6A Government: หน่วยงานรัฐเป็น Organization เช่นกัน'],
+    caution: ['Customer Account เป็นความสัมพันธ์ — ไม่ใช่ตัวองค์กร'] },
+  { id: 'knowledge', label: 'Knowledge', th: 'เนื้อหา ความรู้ สินทรัพย์ดิจิทัล', icon: 'content',
+    ids: [
+      { code: 'Content ID', label: 'Content', th: 'เนื้อหาหนึ่งชิ้น', ws: 'R4' },
+      { code: 'Topic / Entity ID', label: 'Topic', th: 'เรื่อง / คน / แบรนด์ / สถานที่ / ประเด็น', ws: 'R4' },
+      { code: 'Asset / Document ID', label: 'Asset', th: 'ไฟล์ / วิดีโอ / สัญญา / เอกสาร', ws: 'R2' },
+    ],
+    points: ['Topic ID ทำให้ "อ่านเรื่อง AI" กับ "เข้า Session AI" รู้ว่าเป็นเรื่องเดียวกัน', 'เริ่ม Tag ข่าวใหม่ก่อน ไม่รอ Archive ทั้งหมด'] },
+  { id: 'experience', label: 'Experience', th: 'กิจกรรมและประสบการณ์', icon: 'event',
+    ids: [
+      { code: 'Event ID', label: 'Event', th: 'งาน / Forum / Seminar', ws: 'R5' },
+      { code: 'Session ID', label: 'Session', th: 'Session ย่อยในงาน', ws: 'R5' },
+    ],
+    points: ['Register เดิมของ Forum เป็นจุดเริ่ม (D26)', 'แยก "ลงทะเบียน" กับ "มางานจริง" เป็นคนละ Activity'] },
+]
+
+export const phase1Ids = [
+  { code: 'Person', q: 'ใครคือใคร', ws: 'R5' as WorkstreamId },
+  { code: 'Organization', q: 'องค์กรไหน', ws: 'R6' as WorkstreamId },
+  { code: 'Content', q: 'เนื้อหาชิ้นไหน', ws: 'R4' as WorkstreamId },
+  { code: 'Topic', q: 'เกี่ยวกับเรื่องอะไร', ws: 'R4' as WorkstreamId },
+  { code: 'Event / Session', q: 'เกิดที่ไหน', ws: 'R5' as WorkstreamId },
+  { code: 'Activity', q: 'ใครทำอะไร เมื่อไร', ws: 'R5' as WorkstreamId },
+]
+
+export const idPrinciples = [
+  { title: 'Organization ≠ บริษัทเอกชน', text: 'อาจเป็น Agency, กระทรวง, มหาวิทยาลัย, รัฐวิสาหกิจ, Partner, Supplier — สำคัญกับ 6A Government' },
+  { title: 'Customer Account = ความสัมพันธ์', text: 'ORG-xxxx (ตัวอย่าง) เป็นองค์กร · "ลูกค้าที่ใช้งานอยู่ / Sponsor / แหล่งข่าว" เป็น Account ที่แยกจากองค์กร' },
+  { title: 'Audience → Person เมื่อมีหลักฐาน', text: 'ไม่บังคับให้รู้ตัวตนตั้งแต่แรก — เชื่อมเมื่อ Login/ยืนยัน/ยินยอม เท่านั้น' },
+]
+
+export const archConcepts = [
+  { id: 'identity', label: 'Identity', q: 'นี่คือใคร / อะไร' },
+  { id: 'relationship', label: 'Relationship', q: 'เกี่ยวข้องกับอะไร' },
+  { id: 'activity', label: 'Activity', q: 'ทำอะไร' },
+  { id: 'context', label: 'Context', q: 'เกิดที่ไหน เมื่อไร เพราะอะไร' },
+  { id: 'permission', label: 'Permission', q: 'ใช้ข้อมูลนี้ได้แค่ไหน' },
+]
+
+/** Master vs alias — fictional sample only. */
+export const aliasExample = {
+  master: 'PER-00182 (ตัวอย่าง)',
+  aliases: ['LINE user · U•••••(ตัวอย่าง)', 'Web account · USER-1892', 'Event registration · REG-0412', 'Google / Facebook login', 'CRM contact · 9281'],
+  activity: [['Person', 'PER-00182'], ['Action', 'SESSION_CHECK_IN'], ['Object', 'SES-018'], ['Time', '10:31'], ['Channel', 'Event QR'], ['Source', 'Forum (ตัวอย่าง)']],
+}
+
+export const interestBuckets = [
+  { id: 'declared', label: 'Declared', th: 'ผู้ใช้บอกเอง' },
+  { id: 'observed', label: 'Observed', th: 'เห็นจากพฤติกรรม' },
+  { id: 'inferred', label: 'Inferred', th: 'AI ประเมิน' },
+]
+
+/** How the graph gives AI context — connections only where rights allow. */
+export const graphLinks: [string, string, string][] = [
+  ['Person', 'อ่าน', 'Content'],
+  ['Content', 'เกี่ยวกับ', 'Topic'],
+  ['Person', 'เข้าร่วม', 'Session'],
+  ['Session', 'อยู่ใน', 'Event'],
+  ['Session', 'เกี่ยวกับ', 'Topic'],
+  ['Person', 'ทำงานที่', 'Organization'],
+  ['Organization', 'เป็นลูกค้า', 'Campaign'],
+  ['Campaign', 'นำไปสู่', 'Opportunity'],
+]
+
+export const manySystems = [
+  { sys: 'CRM', own: 'Customer ID ของตัวเอง' },
+  { sys: 'DAM / CMS', own: 'Content ID ของตัวเอง' },
+  { sys: 'LINE', own: 'User ID ของตัวเอง' },
+]
+
+export const idFrameworkSources: SourceRef[] = [
+  NIDF('ผัง 4 กลุ่ม ID และหลักการ — ปรับถ้อยคำ, ใช้รหัสตัวอย่างสมมติ, ไม่ใช้ชื่อลูกค้าจริง'),
+  D26('§24', 'Nation ID / Nation Group ID — Map แต่ละแบรนด์ในหลังบ้าน'),
+  P26('Nation ID เป็นรหัสกลางของทุก Entity — ข้อเสนอ ยังไม่ใช่ระบบที่สร้างแล้ว'),
 ]

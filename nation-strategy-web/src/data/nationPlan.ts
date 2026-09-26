@@ -14,7 +14,7 @@
 export type Basis = 'meeting' | 'meeting26' | 'proposal' | 'pending'
 export type DateBasis = 'meeting_date' | 'meeting_year_end' | 'proposed'
 export type RelationType = 'hard_gate' | 'enables' | 'feeds'
-export type SourceId = 'S23' | 'S17' | 'B4C' | 'BSales' | 'E01' | 'D26' | 'S26' | 'P26' | 'IMG' | 'WEB'
+export type SourceId = 'S23' | 'S17' | 'B4C' | 'BSales' | 'E01' | 'D26' | 'S26' | 'P26' | 'IMG' | 'WEB' | 'NIDF'
 export type WorkstreamId = 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R6' | 'R7'
 export type MilestoneId = 'M0' | 'M1' | 'M2' | 'M3' | 'M4' | 'M5' | 'M6' | 'M7'
 export type PriorityId = 'P0' | 'P1' | 'P2' | 'P3'
@@ -254,6 +254,13 @@ export const sources: Source[] = [
     title: 'เอกสารทางการ LINE / Google Analytics (ตรวจ 26 ก.ย. 2026)',
     file: 'developers.line.biz · support.google.com/analytics',
     usedFor: 'ข้อควรระวังเทคนิค LIFF/Token/User-ID/PII — ต้องตรวจซ้ำก่อนพัฒนา Production',
+    basis: 'proposal',
+  },
+  {
+    id: 'NIDF',
+    title: 'ภาพ Nation ID Framework (อินโฟกราฟิกแนวคิด)',
+    file: 'Nation ID Framework infographic',
+    usedFor: 'ผัง 4 กลุ่ม ID, หลัก 3 ข้อ, Master/Alias, Start with 6 IDs, Interest 3 ถัง, 5 แนวคิด, Many systems one truth — ปรับถ้อยคำและใช้ข้อมูลตัวอย่างสมมติ',
     basis: 'proposal',
   },
 ]

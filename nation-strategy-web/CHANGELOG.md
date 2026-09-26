@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-26 — Nation ID Framework
+- ฉาก Nation ID: "One real-world entity = One Nation ID" · ผัง 4 กลุ่ม (People / Business / Knowledge / Experience, 12 IDs)
+- Phase 1: Start with 6 IDs ผ่าน Forum Pilot (Mac Proposal) · Story mode แสดงรหัสตัวอย่าง · Key: Many systems, one truth
+- แผงรายละเอียด: หลัก 3 ข้อ + 5 แนวคิด, Master vs Alias, Interest 3 ถัง (Declared / Observed / Inferred), Knowledge Graph ใน Connected Org
+- คำศัพท์: Nation ID = รหัสกลางของทุก Entity · Person ID เป็นหนึ่งในนั้น · ไม่ใช้ชื่อลูกค้าจริง รหัสทั้งหมดเป็นตัวอย่าง · e2e 126/126
+
 ## 2026-09-26 — Export to PDF
 - ปุ่ม **PDF** มุมขวาบน + ลิงก์ท้ายหน้า: 10 หน้า = 10 ฉาก (แบบ Present, Timeline แบบ Overview เห็นทุกแถว) · หลัง Export คืนโหมด/ซูมเดิม
 - สร้างไฟล์ในเบราว์เซอร์ (html-to-image + PDF writer ในโค้ด) · e2e 119/119

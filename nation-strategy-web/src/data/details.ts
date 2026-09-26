@@ -5,7 +5,7 @@ import {
   type Basis, type MilestoneId, type SourceRef, type WorkstreamId,
 } from './nationPlan'
 import {
-  connectedNodes, focusTiers, nationIdBoxes, openQuestions26, proposedCheckpoints, r6Tracks, type InfoNode,
+  connectedNodes, focusTiers, idDomains, idFrameworkSources, manySystems, nationIdBoxes, openQuestions26, phase1Ids, proposedCheckpoints, r6Tracks, type InfoNode,
 } from './upgrade26'
 import { checkpointTasks, milestonesFedBy, successorsOf } from '../lib/graph'
 import { fmtDate, fmtRange } from '../lib/dates'
@@ -33,7 +33,7 @@ export interface DetailContent {
   timeline?: TimelineFocus
   extra?: { heading: string; items: string[]; tone?: 'caution' | 'plain' }
   /** Interactive block rendered by the panel (owners board, backup, flows…). */
-  custom?: 'owners' | 'backup' | 'issues' | 'entities' | 'lineflow' | 'r6' | 'r5'
+  custom?: 'owners' | 'backup' | 'issues' | 'principles' | 'alias' | 'buckets' | 'kgraph' | 'lineflow' | 'r6' | 'r5'
   /** Hide the What/Why/… rows (tool panels). */
   hideRows?: boolean
 }
@@ -77,7 +77,7 @@ function workstreamDetail(id: WorkstreamId): DetailContent {
     extra: id === 'R1'
       ? { heading: 'ฟังก์ชันที่หารือว่าจะเพิ่มได้ (ไม่ใช่ Org Chart ที่อนุมัติ)', items: r1DiscussedFunctions, tone: 'caution' }
       : id === 'R3'
-        ? { heading: 'หมายเหตุชื่อระบบ', items: ['Nation House = Internal System', 'Nation ID = แนวทางข้อมูล/ตัวตนผู้ใช้', 'ชื่อและขอบเขตยังต้องยืนยัน — ไม่ใช่ฐานข้อมูลเดียวกันที่ทุกฝ่ายเข้าถึงได้ทั้งหมด'], tone: 'caution' }
+        ? { heading: 'หมายเหตุชื่อระบบ', items: ['Nation House = Internal System', 'Nation ID = รหัสกลางของคน องค์กร เนื้อหา และกิจกรรม', 'ชื่อและขอบเขตยังต้องยืนยัน — ไม่ใช่ฐานข้อมูลเดียวกันที่ทุกฝ่ายเข้าถึงได้ทั้งหมด'], tone: 'caution' }
         : undefined,
   }
 }
@@ -373,7 +373,40 @@ export function getDetail(sel: Selection): DetailContent {
     }
     case 'p3': return priorityDetail('P3')
     case 'connected': return infoDetail('Connected Organization', connectedNodes.find((n) => n.id === sel.id)!)
-    case 'nid': return infoDetail('Nation ID', nationIdBoxes.find((n) => n.id === sel.id)!)
+    case 'nid': {
+      const d = infoDetail('Nation ID', nationIdBoxes.find((n) => n.id === sel.id)!)
+      return sel.id === 'interest' ? { ...d, custom: 'buckets' } : d
+    }
+    case 'iddomain': {
+      const g = idDomains.find((x) => x.id === sel.id)!
+      const wss = [...new Set(g.ids.map((i) => i.ws).filter(Boolean))] as WorkstreamId[]
+      return {
+        kindLabel: 'Nation ID · กลุ่ม', title: `${g.label} — ${g.th}`, badges: ['proposal', 'pending'],
+        what: f(g.ids.map((i) => i.code).join(' · '), g.ids.map((i) => `${i.code}: ${i.th}${i.ws ? ` (${i.ws})` : ''}`)),
+        why: f(g.points[0], g.points.slice(1)),
+        owner: f(wss.map((w) => `${w}: ${wsById[w].ownerLabel}`).join(' · ')),
+        timing: null, prereq: null, deliverable: null,
+        unlocks: f('ใช้รหัสเดียวกันข้ามระบบ — CRM / DAM / LINE โยงกลับมาที่ Nation ID'), unlockLinks: wss.map(linkOf),
+        pending: f('โครงสร้างรหัสเป็นข้อเสนอ — ยังไม่ใช่ระบบที่สร้างแล้ว'),
+        sourceRefs: idFrameworkSources,
+        extra: g.caution ? { heading: 'ข้อควรระวัง', items: g.caution, tone: 'caution' } : undefined,
+      }
+    }
+    case 'phase1': return {
+      kindLabel: 'Nation ID · Phase 1', title: 'Start with 6 IDs', badges: ['proposal', 'pending'],
+      what: f(phase1Ids.map((p) => p.code).join(' → '), phase1Ids.map((p) => `${p.code}: ${p.q} (${p.ws})`)),
+      why: f('แค่ Forum Pilot ก็เริ่มสร้าง Graph ได้ — ไม่ต้องรอเชื่อมทุกระบบ'),
+      owner: f(`R5: ${wsById.R5.ownerLabel} · R6 (Organization): ${wsById.R6.ownerLabel}`),
+      timing: f('ผูกกับ CP2 On-ground Register + Session test (วันรอยืนยัน) และ Gate M4'),
+      prereq: f('Register เดิมของ Forum · สิทธิ/การแจ้งใช้ข้อมูลผ่านการตรวจ'), prereqLinks: [linkOf('M4')],
+      deliverable: f('Graph ตัวอย่างจาก Forum 1 งาน: คน → องค์กร → เนื้อหา → หัวข้อ → Session → Activity'),
+      unlocks: f('ต่อยอด Audience Intelligence (R5) และ Organization ID ให้ Sales/Government (R6)'), unlockLinks: [linkOf('R5'), linkOf('R6'), linkOf('R4')],
+      pending: f('เป็นข้อเสนอ Mac — ไม่ใช่มติประชุม · งาน Forum ที่ใช้ทดลองยังรอยืนยัน'),
+      sourceRefs: idFrameworkSources, timeline: { workstream: 'R5' },
+    }
+    case 'idrules': return tool('Nation ID', 'หลัก 3 ข้อ + 5 แนวคิด', 'principles', idFrameworkSources)
+    case 'alias': return tool('Nation ID', 'Master vs Alias', 'alias', idFrameworkSources)
+    case 'kgraph': return { ...tool('Connected Organization', 'AI เข้าใจบริบทได้อย่างไร', 'kgraph', idFrameworkSources), extra: { heading: 'Many systems, one truth', items: manySystems.map((m) => `${m.sys}: ${m.own} → โยงกลับ Nation ID`) } }
     case 'focus': return focusDetail(sel.id)
     case 'cp26': return cp26Detail(sel.id)
     case 'r6track': {
@@ -389,7 +422,6 @@ export function getDetail(sel: Selection): DetailContent {
       }
     }
     case 'r5lanes': return { ...tool('R5 · Nation ID', 'On-ground · Online · Legacy', 'r5', [{ source: 'D26', sections: '§3, §8, §25', note: 'Register เดิม · Sandbox ~1 เดือน' }], ['meeting26', 'pending']), timeline: { workstream: 'R5' } }
-    case 'entities': return tool('Nation ID', 'สิ่งที่เชื่อมกัน', 'entities', [{ source: 'P26', note: 'โครงสร้าง Entity เป็นข้อเสนอ' }])
     case 'lineflow': return tool('Nation ID', 'Flow LINE → Web', 'lineflow', [{ source: 'WEB', note: 'เอกสาร LINE/GA4 ทางการ (W1–W8)' }, { source: 'IMG', note: 'ภาพ Flow ของทีม — อ้างอิง' }], ['proposal', 'pending'])
     case 'issues': return tool('Timeline', 'ตรวจวันที่', 'issues', [], ['pending'])
     case 'owners': return tool('Owners', 'ใครรับผิดชอบอะไร', 'owners', [{ source: 'D26', note: 'ชื่อผู้รับผิดชอบจากประชุม 26 ก.ย.' }], ['meeting26', 'pending'])

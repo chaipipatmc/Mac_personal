@@ -56,6 +56,9 @@ export function ConnectedOrg() {
           <span key={a} className="cx-split-item"><Icon name={ic} size={18} />{a}<Icon name="arrow" size={14} /><strong>{b}</strong></span>
         ))}
       </button>
+      <button type="button" className={`mini-btn kg-btn${isSelected('kgraph', 'kgraph') ? ' is-selected' : ''}`} aria-haspopup="dialog" onClick={(e) => select({ kind: 'kgraph', id: 'kgraph' }, e.currentTarget)}>
+        <Icon name="link" size={16} /><E k="cx.kgraph" v="AI เข้าใจบริบทได้อย่างไร (Knowledge Graph)" label="Button" />
+      </button>
     </SceneShell>
   )
 }

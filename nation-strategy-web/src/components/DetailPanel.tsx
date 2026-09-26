@@ -4,13 +4,13 @@ import { getDetail, type Field, type LinkItem } from '../data/details'
 import { sourceById, taskById } from '../data/nationPlan'
 import { Badge } from './Badge'
 import { EditForm } from './EditForm'
-import { BackupTool, EntitiesTable, IssuesList, LineFlowView, OwnersBoard, R5Lanes, R6Tracks } from './PanelTools'
+import { AliasView, BackupTool, GraphView, IdPrinciples, InterestBuckets, IssuesList, LineFlowView, OwnersBoard, R5Lanes, R6Tracks } from './PanelTools'
 import { E } from './Editable'
 import { patchMilestone, patchTask, patchWorkstream } from '../lib/planStore'
 import type { Selection } from '../lib/selection'
 import { msById, wsById, type MilestoneId, type WorkstreamId } from '../data/nationPlan'
 
-const CUSTOM = { owners: OwnersBoard, backup: BackupTool, issues: IssuesList, entities: EntitiesTable, lineflow: LineFlowView, r6: R6Tracks, r5: R5Lanes }
+const CUSTOM = { owners: OwnersBoard, backup: BackupTool, issues: IssuesList, principles: IdPrinciples, alias: AliasView, buckets: InterestBuckets, kgraph: GraphView, lineflow: LineFlowView, r6: R6Tracks, r5: R5Lanes }
 
 const ROWS = [
   ['what', 'What'],

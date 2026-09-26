@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../lib/appContext'
 import { tasksOf, workstreams, wsById, type WorkstreamId } from '../data/nationPlan'
-import { entities, lineFlow, r5Lanes, r6Tracks } from '../data/upgrade26'
+import { aliasExample, archConcepts, graphLinks, idPrinciples, interestBuckets, lineFlow, r5Lanes, r6Tracks } from '../data/upgrade26'
 import { exportEdits, getLoadNotice, getText, importEdits, patchTask, patchWorkstream, setText } from '../lib/planStore'
 import { dateIssues } from '../lib/validate'
 import { Badge } from './Badge'
@@ -125,12 +125,61 @@ export function IssuesList() {
   )
 }
 
-export function EntitiesTable() {
+export function IdPrinciples() {
   return (
-    <table className="ent-table">
-      <thead><tr><th>Entity</th><th>บทบาท</th></tr></thead>
-      <tbody>{entities.map((e) => <tr key={e.entity}><th scope="row">{e.entity}</th><td>{e.role}</td></tr>)}</tbody>
-    </table>
+    <div className="idp">
+      <ol className="idp-list">
+        {idPrinciples.map((p, i) => (
+          <li key={p.title}><span className="idp-no">{i + 1}</span><span><strong><E k={`idp.${i}.title`} v={p.title} label="Principle" /></strong><br /><E k={`idp.${i}.text`} v={p.text} label="Detail" multiline /></span></li>
+        ))}
+      </ol>
+      <h4 className="idp-h">5 แนวคิดของ Nation ID</h4>
+      <ul className="concepts">
+        {archConcepts.map((c) => (
+          <li key={c.id} className={`concept concept-${c.id}`}><strong>{c.label}</strong><span>{c.q}</span></li>
+        ))}
+      </ul>
+      <p className="muted small">Permission เป็นเงื่อนไขของทุกข้อ — มีข้อมูล ≠ ใช้ได้ทุกอย่าง</p>
+    </div>
+  )
+}
+
+export function AliasView() {
+  return (
+    <div className="alias">
+      <div className="alias-master"><Icon name="key" size={18} /><span><small>Master</small><strong>{aliasExample.master}</strong></span></div>
+      <ul className="alias-list">
+        {aliasExample.aliases.map((a) => <li key={a}><span className="alias-tag">Alias</span>{a}</li>)}
+      </ul>
+      <p className="muted small">Nation ID = Master · LINE / Web / Login = Alias ผ่าน Connector — ไม่ใช้ LINE ID เป็นรหัสหลัก</p>
+      <h4 className="idp-h">Activity ID = บันทึกว่า "ใครทำอะไร"</h4>
+      <dl className="act-rec">
+        {aliasExample.activity.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+      <p className="muted small">ทุกรหัสในหน้านี้เป็นตัวอย่างสมมติ</p>
+    </div>
+  )
+}
+
+export function InterestBuckets() {
+  return (
+    <div className="buckets">
+      {interestBuckets.map((b) => <span key={b.id} className={`bucket bucket-${b.id}`}><strong>{b.label}</strong> = {b.th}</span>)}
+      <p className="bucket-warn">⚠ ห้ามรวม 3 อย่างนี้เป็น Tag เดียว</p>
+    </div>
+  )
+}
+
+export function GraphView() {
+  return (
+    <div className="kgraph">
+      <ul>
+        {graphLinks.map(([a, rel, b]) => (
+          <li key={`${a}-${rel}-${b}`}><span className="kg-node">{a}</span><span className="kg-rel">{rel}<Icon name="arrow" size={14} /></span><span className="kg-node">{b}</span></li>
+        ))}
+      </ul>
+      <p className="muted small">AI เข้าใจบริบทจากการเชื่อมเหล่านี้ — เชื่อมเฉพาะที่มีสิทธิ · Business Data กับ Content ยังแยกตามหลัก Connected Org</p>
+    </div>
   )
 }
 
