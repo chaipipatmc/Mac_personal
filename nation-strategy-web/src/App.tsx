@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { getRestoredUi, getVersion, registerUiPart, subscribe } from './lib/planStore'
 import { AppContext, type AppApi } from './lib/appContext'
 import { SCENES, buildHash, parseHash, type SceneId, type Selection, type TimelineFocus } from './lib/selection'
-import { TopBar, BottomNav } from './components/Navigation'
+import { TopBar, BottomNav, PdfButton } from './components/Navigation'
 import { DetailPanel } from './components/DetailPanel'
 import { EditDock } from './components/EditDock'
 import { TextEditor } from './components/Editable'
@@ -194,6 +194,7 @@ export default function App() {
           <p>Draft for discussion · updated after meeting 26 ก.ย. 2026 · Plan, not a Live Tracker</p>
           <button type="button" className="link-btn" onClick={(e) => select({ kind: 'about', id: 'about' }, e.currentTarget)}>Sources & Limitations</button>
           <button type="button" className="link-btn" onClick={(e) => select({ kind: 'backup', id: 'backup' }, e.currentTarget)}>Backup (Export / Import)</button>
+          <PdfButton className="link-btn pdf-link" label="Export to PDF" />
         </footer>
       </main>
       <BottomNav active={active} />

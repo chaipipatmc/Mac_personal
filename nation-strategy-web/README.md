@@ -46,6 +46,7 @@ npm run check        # ทั้งหมด
 - ข้อความที่มีเส้นประ (หัวข้อ, คำอธิบาย, Key, การ์ด, ป้าย, ช่องในแผงรายละเอียด) คลิกเพื่อแก้คำได้ — `Reset to original` คืนคำเดิม
 - Owner แก้ได้ที่ Task / Milestone / Workstream (ในแผงรายละเอียด) หรือรวมที่ปุ่ม **Owners · ใครรับผิดชอบอะไร** (ฉาก Workstreams / แถบ Edit): Owner + Support ของ R1–R7, 6A/6B และ Owner ราย Task
 - **Backup**: Export (คัดลอก JSON) / Import (ตรวจ documentId ก่อนนำเข้า)
+- **PDF** (ปุ่มมุมขวาบน / ท้ายหน้า): Export ทุกฉากเป็น PDF 1 หน้าต่อ 1 ฉาก หน้าตาแบบ Present (Timeline เป็น Overview) — สร้างในเบราว์เซอร์ ไม่ส่งข้อมูลออก; บน claude.ai ใช้ capability `downloads` (ผู้ชมกดยืนยันการบันทึก)
 - แถบ Edit ด้านล่าง: สถานะบันทึก · Undo · Save now · Reset all · Done → Present
 - คำที่แก้เก็บเป็น `text` overrides ใน `PlanEdits` (key เช่น `timeline.headline`, `d.task.T18.why`)
 

@@ -1089,3 +1089,20 @@ button.cx-col:hover { border-color: var(--blue-line); }
   .lf-lanes { grid-template-columns: 1fr; }
   .nid-core { width: 180px; height: 180px; }
 }
+
+/* PDF export */
+.pdf-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: #fff; color: var(--navy); font-size: 14px; font-weight: 700; flex: none; }
+.pdf-btn:hover { background: var(--blue-soft); }
+.pdf-btn:disabled { opacity: .6; cursor: progress; }
+.pdf-link .ico { display: none; }
+.pdf-toast { position: fixed; left: 50%; top: calc(var(--header-h) + 14px); transform: translateX(-50%); z-index: 80; background: var(--navy); color: #fff; border-radius: 12px; padding: 8px 16px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(11,36,71,.25); }
+body.pdf-export .scene { min-height: auto; }
+body.pdf-export .gantt-scroll { max-height: none !important; height: auto !important; overflow: visible; }
+body.pdf-export .gantt-toolbar, body.pdf-export .g-resize, body.pdf-export .m-tabs, body.pdf-export .gantt-edit-hint, body.pdf-export .tb-opts { display: none !important; }
+body.pdf-export main { margin-right: 0 !important; }
+@media (max-width: 640px) {
+  .topbar-row { gap: 8px; }
+  .pdf-btn { padding: 4px 11px; }
+  .pdf-btn .pdf-label { display: none; }
+}
+body.pdf-export .head-meta .badges { flex-wrap: nowrap; }

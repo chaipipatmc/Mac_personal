@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { useApp } from '../lib/appContext'
 import {
   meta, milestones, msById, priorities, tasks, taskById, workstreams, minimumDataMarker, relations,
@@ -96,6 +97,26 @@ export function InteractiveGantt() {
     try { const v = Number(localStorage.getItem(H_KEY)); return v >= 200 ? v : null } catch { return null }
   })
   const suppressClick = useRef(false)
+
+  // PDF export: show the whole plan (Overview, all rows in view), then put the user's view back.
+  const pdfPrev = useRef<{ zoom: Zoom; px: number; maxed: boolean; tab: 'gantt' | 'ms' } | null>(null)
+  const pdfState = useRef({ zoom, customPx, maxed, mTab })
+  pdfState.current = { zoom, customPx, maxed, mTab }
+  useEffect(() => {
+    const onPdf = (e: Event) => {
+      if ((e as CustomEvent).detail === 'start') {
+        const c = pdfState.current
+        pdfPrev.current = { zoom: c.zoom, px: c.customPx, maxed: c.maxed, tab: c.mTab }
+        flushSync(() => { setZoom('overview'); setMaxed(false); setMTab('gantt') })
+      } else if (pdfPrev.current) {
+        const p = pdfPrev.current
+        pdfPrev.current = null
+        setZoom(p.zoom); setCustomPx(p.px); setMaxed(p.maxed); setMTab(p.tab)
+      }
+    }
+    window.addEventListener('nation:pdf', onPdf)
+    return () => window.removeEventListener('nation:pdf', onPdf)
+  }, [])
 
   const narrow = viewW < 640
   const labelW = narrow ? 128 : 236

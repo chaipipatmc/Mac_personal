@@ -243,6 +243,13 @@ for (const [label, vp, touch] of [['390', { width: 390, height: 844 }, true], ['
   await page.click('.ms-chip[aria-label^="M4"]')
   ok('milestone shows acceptance conditions', (await page.textContent('.drow-deliverable')).includes('ผลทดสอบ') && !(await page.textContent('.panel')).includes('ไม่มีงานก่อนหน้าบังคับ'))
   await page.keyboard.press('Escape')
+  // Export to PDF: one page per scene, view restored afterwards
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.click('.pdf-btn')])
+  const pdfPath = `${OUT}/export.pdf`
+  await dl.saveAs(pdfPath)
+  const pdf = (await import('node:fs')).readFileSync(pdfPath).toString('latin1')
+  ok('PDF export: valid file with 10 pages', pdf.startsWith('%PDF-1.4') && /\/Count 10 /.test(pdf) && pdf.trimEnd().endsWith('%%EOF'))
+  ok('PDF export restores the page', !(await page.evaluate(() => document.body.classList.contains('pdf-export'))))
   await page.screenshot({ path: `${OUT}/1440-interaction.png` })
   ok('desktop: no console errors', errs.length === 0, errs.join(' | '))
   await ctx.close()

@@ -5,6 +5,48 @@ import { meta } from '../data/nationPlan'
 import { fmtDate } from '../lib/dates'
 import { Badge } from './Badge'
 import { ModeSwitch } from './EditDock'
+import { Icon } from './Icon'
+import { deliverPdf, scenesToPdf } from '../lib/pdfExport'
+
+const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()))
+
+/** Export all scenes as a PDF (one page per scene, Present-mode look). */
+export function PdfButton({ className = 'pdf-btn', label = 'PDF' }: { className?: string; label?: string }) {
+  const { editMode, setEditMode, close } = useApp()
+  const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState('')
+  const run = async () => {
+    if (busy) return
+    setBusy(true)
+    const wasEdit = editMode
+    const y = window.scrollY
+    close()
+    if (wasEdit) setEditMode(false)
+    await nextFrame(); await nextFrame()
+    try {
+      const blob = await scenesToPdf((d, n) => setStatus(`กำลังสร้าง PDF ${d}/${n}`))
+      setStatus('พร้อมบันทึก…')
+      const how = await deliverPdf(blob, `NATION-Strategy-to-Execution-${new Date().toISOString().slice(0, 10)}.pdf`)
+      setStatus(how === 'saved' ? 'บันทึก PDF แล้ว' : 'ดาวน์โหลด PDF แล้ว')
+    } catch (e) {
+      const code = (e as { code?: string })?.code
+      setStatus(code === 'declined' ? 'ยกเลิกการบันทึก' : 'สร้าง PDF ไม่สำเร็จ — ลองใหม่อีกครั้ง')
+    } finally {
+      if (wasEdit) setEditMode(true)
+      window.scrollTo(0, y)
+      setBusy(false)
+      setTimeout(() => setStatus(''), 4000)
+    }
+  }
+  return (
+    <>
+      <button type="button" className={className} onClick={() => void run()} disabled={busy} aria-label="Export to PDF" title="Export ทุกฉากเป็น PDF">
+        <Icon name="page" size={16} /><span className="pdf-label">{busy ? '…' : label}</span>
+      </button>
+      {status && <div className="pdf-toast" role="status" aria-live="polite">{status}</div>}
+    </>
+  )
+}
 
 export function TopBar({ active }: { active: SceneId }) {
   const { goScene, select } = useApp()
@@ -33,6 +75,7 @@ export function TopBar({ active }: { active: SceneId }) {
           </ol>
         </nav>
         <StepButtons active={active} />
+        <PdfButton />
         <ModeSwitch />
         <button type="button" className="meta-chip" onClick={(e) => select({ kind: 'about', id: 'about' }, e.currentTarget)}>
           <span className="meta-long">{meta.presenter} · {fmtDate(meta.dataAsOf)}</span>
