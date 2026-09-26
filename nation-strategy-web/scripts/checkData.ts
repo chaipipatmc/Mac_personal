@@ -15,7 +15,7 @@ check(tasks.length === 21, `expected 21 tasks, got ${tasks.length}`)
 check(milestones.length === 8, `expected 8 milestones, got ${milestones.length}`)
 check(milestones.map((m) => m.id).join() === 'M0,M1,M2,M3,M4,M5,M6,M7', 'milestones must be M0–M7 in order')
 check(pilotCandidates.length === 4, 'expected 4 pilot candidates')
-check(decisions.length === 4, 'expected 4 decisions')
+check(decisions.length === 6, 'expected 6 decisions')
 check(planState.selectedPilotIds === null, 'selectedPilotIds must start null')
 
 const start = dayNumber(meta.timelineStart)

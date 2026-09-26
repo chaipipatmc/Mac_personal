@@ -11,10 +11,10 @@
  * - This is the plan as of 23 Sep 2026, not a live tracker.
  */
 
-export type Basis = 'meeting' | 'proposal' | 'pending'
+export type Basis = 'meeting' | 'meeting26' | 'proposal' | 'pending'
 export type DateBasis = 'meeting_date' | 'meeting_year_end' | 'proposed'
 export type RelationType = 'hard_gate' | 'enables' | 'feeds'
-export type SourceId = 'S23' | 'S17' | 'B4C' | 'BSales' | 'E01'
+export type SourceId = 'S23' | 'S17' | 'B4C' | 'BSales' | 'E01' | 'D26' | 'S26' | 'P26' | 'IMG' | 'WEB'
 export type WorkstreamId = 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R6' | 'R7'
 export type MilestoneId = 'M0' | 'M1' | 'M2' | 'M3' | 'M4' | 'M5' | 'M6' | 'M7'
 export type PriorityId = 'P0' | 'P1' | 'P2' | 'P3'
@@ -52,6 +52,10 @@ export interface Workstream {
   acceptance: string
   ownerLabel: string
   ownerBasis: Basis
+  /** Supporting people / coordinators (editable). Coordinators are not accountable owners. */
+  support: string
+  /** R1–R6 are the current focus; R7 is tracked separately. */
+  focus: boolean
   unlocks: string
   pending: string[]
   candidateId: CandidateId | null
@@ -76,6 +80,8 @@ export interface Task {
   custom?: boolean
   /** Person/role responsible for this Work Package (editor field; falls back to the workstream owner). */
   owner?: string
+  /** Child scope added from the 26 Sep meeting (shown in details, not as extra bars). */
+  scope?: string[]
   start: string
   end: string
   priority: PriorityId
@@ -106,6 +112,8 @@ export interface Milestone {
   dateBasisNote: string
   /** Work Packages whose output feeds this gate. */
   fedBy: string[]
+  /** What must be seen to pass — separate from finish-to-start inputs. */
+  acceptanceConditions: string[]
   actualStatus: 'unconfirmed'
   sourceRefs: SourceRef[]
 }
@@ -161,7 +169,7 @@ export const meta: Meta = {
   title: 'NATION — Strategy to Execution',
   presenter: 'Mac',
   audience: 'คุณฉาย (CEO Nation)',
-  dataAsOf: '2026-09-23',
+  dataAsOf: '2026-09-26',
   version: 'v0.1 (ร่าง)',
   proposalStatus: 'ร่างเพื่อหารือและอนุมัติ',
   timelineStart: '2026-09-24',
@@ -213,12 +221,47 @@ export const sources: Source[] = [
     usedFor: '7 Workstreams, M0–M7, เลือก 2–3 Pilot จาก 4 Candidate, เกณฑ์เปิดใช้/วัดผล/ตรวจรับ',
     basis: 'proposal',
   },
+  {
+    id: 'D26',
+    title: 'บันทึกประชุมฉบับละเอียด 26 ก.ย. 2026 (27 หัวข้อ)',
+    file: '09-26_การประชุม_แผนรวมและโครงการหลักด้านระบบ(1).md',
+    usedFor: 'Owner R1–R7, Focus R6 + R5, Sales Intelligence, Data Hub/Executive AI, Nation ID, Build vs Buy',
+    basis: 'meeting26',
+  },
+  {
+    id: 'S26',
+    title: 'สรุปจัดหมวด 26 ก.ย. 2026',
+    file: '09-26_การประชุม_แผนรวมและโครงการหลักด้านระบบ.md',
+    usedFor: 'Action items/วันที่บางรายการ — บางจุดไม่ตรงกับ D26 จึงแสดงเป็น TBC',
+    basis: 'meeting26',
+  },
+  {
+    id: 'P26',
+    title: 'ข้อเสนอ Mac หลังประชุม 26 ก.ย.',
+    file: 'NATION_STRATEGY_UPGRADE_26SEP2026.md',
+    usedFor: 'การจัดกลุ่ม 6+1, Connected Organization, Nation ID 4 กล่อง, Checkpoints ที่เสนอ — ไม่ใช่มติที่ประชุม',
+    basis: 'proposal',
+  },
+  {
+    id: 'IMG',
+    title: 'ภาพ Flow LINE ของทีม',
+    file: 'image.png',
+    usedFor: 'Broadcast → Click → Website → Profile/UTM → GA4/DB → Report — คำอธิบายของทีม ไม่ใช่ผลทดสอบ',
+    basis: 'meeting26',
+  },
+  {
+    id: 'WEB',
+    title: 'เอกสารทางการ LINE / Google Analytics (ตรวจ 26 ก.ย. 2026)',
+    file: 'developers.line.biz · support.google.com/analytics',
+    usedFor: 'ข้อควรระวังเทคนิค LIFF/Token/User-ID/PII — ต้องตรวจซ้ำก่อนพัฒนา Production',
+    basis: 'proposal',
+  },
 ]
 
 export const workstreams: Workstream[] = [
   {
     id: 'R1',
-    title: 'Workforce & Org',
+    title: 'Workforce & Organization',
     shortTitle: 'Workforce',
     group: 'org',
     what: 'ปรับกำลังคน บทบาท JD/KPI และเส้นทางอาชีพ ให้ตรงกับงานแบบ Media Tech',
@@ -226,8 +269,10 @@ export const workstreams: Workstream[] = [
     meetingDirection: 'Workforce, Delayer, JD/KPI, Career Path, Relocate และเพิ่มฟังก์ชัน',
     proposedOutcome: 'โครงสร้าง/บทบาท/เกณฑ์ผลงานและแผนกำลังคนใน Scope; ความรู้และผู้รับช่วง',
     acceptance: 'เจ้าของงานรับรองวิธีทำงาน; ผู้รับช่วงทำงานได้; ผู้มีอำนาจอนุมัติการเปลี่ยนผ่าน',
-    ownerLabel: 'คุณฉาย + HR; ผู้รับผิดชอบ HR รายชื่อรอยืนยัน',
-    ownerBasis: 'pending',
+    ownerLabel: 'พี่อู๊ด',
+    ownerBasis: 'meeting26',
+    support: 'HR · ออกแบบ Workflow ร่วม: คุณกิ๊บ · คุณอีจิ๊บ · คุณเส็ง',
+    focus: true,
     unlocks: 'ออกแบบ Workflow ร่วมกับ R2 และเตรียมผู้ใช้/ผู้ดูแลสำหรับ Wave 1',
     pending: ['ผู้รับผิดชอบ HR รายชื่อ', 'Scope ฝ่าย/งานที่อยู่ใน Reform สิ้นปี', 'ฟังก์ชันใหม่ที่จะเพิ่ม (ยังเป็นการหารือ)'],
     candidateId: null,
@@ -235,16 +280,18 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R2',
-    title: 'Support Workflow',
-    shortTitle: 'Support',
+    title: 'Workflow & Paperless',
+    shortTitle: 'Workflow',
     group: 'org',
     what: 'ปรับงาน Support, KPI และสายอนุมัติ โดยใช้ AI ช่วยในส่วนที่เลือกเป็น Pilot',
     why: 'ลดงานซ้ำและเวลาอนุมัติ — ต่อยอดงาน AI ตรวจเอกสารบัญชีที่มีอยู่แล้ว ไม่เริ่มจากศูนย์',
     meetingDirection: 'ปรับ Support, Nation House, KPI/Approval; มีงาน AI ตรวจเอกสารบัญชีเดิม',
     proposedOutcome: 'Workflow ที่เลือกพร้อมการอนุมัติ/ข้อยกเว้น; AI ช่วยในส่วนที่เลือกเป็น Pilot',
     acceptance: 'เวลา คุณภาพ การใช้งานจริง และผู้อนุมัติงานรับรอง',
-    ownerLabel: 'หัวหน้า Support / Finance — เสนอให้เป็นเจ้าของ',
-    ownerBasis: 'proposal',
+    ownerLabel: 'Mac + พี่เส็ง / IT',
+    ownerBasis: 'meeting26',
+    support: 'พี่ตุ๊ก (OCR/ตรวจเอกสารบัญชี, Auto-approve เดิม)',
+    focus: true,
     unlocks: 'Candidate C1 — AI Support และ Baseline เวลา/คุณภาพสำหรับวัดผล',
     pending: ['เจ้าของ Workflow ที่เลือก', 'ชื่อและขอบเขต Nation House (Internal System) ยังต้องยืนยัน'],
     candidateId: 'C1',
@@ -252,16 +299,18 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R3',
-    title: 'IT/BI & Data Foundation',
-    shortTitle: 'IT/BI & Data',
+    title: 'Data Foundation & Executive AI',
+    shortTitle: 'Data & Exec AI',
     group: 'foundation',
     what: 'กำหนดขอบเขต IT/BI ผู้ดูแล/ผู้สำรอง สิทธิข้อมูล และข้อมูลขั้นต่ำที่ Wave 1 ต้องใช้',
     why: 'ลดการพึ่งบุคคลเดียว และให้ทุก Pilot ใช้ข้อมูลที่มีสิทธิและคุณภาพพอ',
     meetingDirection: 'Reform Tech, ลดการพึ่งบุคคลเดียว, เชื่อมระบบ/ข้อมูล',
     proposedOutcome: 'ขอบเขต IT/BI ผู้ดูแล/สำรอง สิทธิข้อมูล แบบเชื่อม และข้อมูลขั้นต่ำของ Wave 1',
     acceptance: 'ผู้ดูแลชัด; สิทธิและคุณภาพข้อมูลผ่านเกณฑ์; ส่งมอบการดูแลได้',
-    ownerLabel: 'Mac + IT/BI — ขอบเขตการรับโอนรอยืนยัน',
-    ownerBasis: 'pending',
+    ownerLabel: 'Mac + พี่เส็ง',
+    ownerBasis: 'meeting26',
+    support: 'ทีม IT (รวมแอปแต่ละฝ่ายเข้าถังกลาง)',
+    focus: true,
     unlocks: 'ข้อมูล/การเชื่อมเฉพาะส่วนที่ R2, R4, R5, R6 ต้องใช้ — ไม่ต้องรอ R3 เสร็จทั้งก้อน',
     pending: ['ขอบเขตอำนาจและวันรับโอน IT/BI', 'Nation House กับ Nation ID ไม่ใช่ฐานข้อมูลเดียวกันที่ทุกฝ่ายเข้าถึงได้ — ขอบเขตรอยืนยัน'],
     candidateId: null,
@@ -277,8 +326,10 @@ export const workstreams: Workstream[] = [
     meetingDirection: 'Archive, ใช้คลังเดิม, AI Draft ที่คนตรวจ และพัฒนา CMS ควบคู่',
     proposedOutcome: 'Inventory/สิทธิ/มาตรฐาน; คลังทดลองที่เลือก; แบบงาน AI Draft/CMS',
     acceptance: 'ค้นหาตามโจทย์ อ้างแหล่งได้ และ Editorial ตรวจคุณภาพ',
-    ownerLabel: 'ผู้บริหาร Content / Editorial — เสนอ',
-    ownerBasis: 'proposal',
+    ownerLabel: 'Mac (ดูหลัก)',
+    ownerBasis: 'meeting26',
+    support: 'Delivery team: TBC — ประเมิน Outsource',
+    focus: true,
     unlocks: 'Candidate C3 และคอนเทนต์ที่ใช้สนับสนุน Community (R5)',
     pending: ['Editorial owner', 'ชุดคลังทดลองที่มีสิทธิใช้'],
     candidateId: 'C3',
@@ -289,16 +340,18 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R5',
-    title: 'Audience & Community',
-    shortTitle: 'Community',
+    title: 'Nation ID & Audience Intelligence',
+    shortTitle: 'Nation ID',
     group: 'business',
     what: 'ออกแบบ Community และกิจกรรมที่วัด Conversion ได้ พร้อมสิทธิการใช้ข้อมูล',
     why: 'เปลี่ยนผู้ติดตามให้เป็นความสัมพันธ์ที่วัดผลได้ ไม่หยุดที่ยอดผู้ติดตาม',
     meetingDirection: 'Community → Data → Conversion → Commercial; เชื่อมฐานผู้ชม/สมาชิก',
     proposedOutcome: 'แผน Community, กิจกรรมที่เลือก, นิยาม Conversion และการใช้ข้อมูล',
     acceptance: 'การลงทะเบียน/ร่วมกิจกรรม/ติดตามผลที่นิยามชัด; แยกทดสอบจากผลจริง',
-    ownerLabel: 'MD แบรนด์ + Community/Event — เสนอ; ส่วนกลางหรือ BU รอยืนยัน',
-    ownerBasis: 'pending',
+    ownerLabel: 'Mac + พี่เส็ง + MD',
+    ownerBasis: 'meeting26',
+    support: 'ผู้ประสาน Register/UX: แจ๊ค · โบ · โม',
+    focus: true,
     unlocks: 'Candidate C4 และข้อมูลกิจกรรมสำหรับออกแบบรายได้ (ต้องพิสูจน์)',
     pending: [
       'Community เป็นฟังก์ชันส่วนกลางหรือ BU',
@@ -313,16 +366,18 @@ export const workstreams: Workstream[] = [
   },
   {
     id: 'R6',
-    title: 'Government Intelligence',
-    shortTitle: 'Government',
+    title: 'Commercial Intelligence',
+    shortTitle: 'Commercial Intel',
     group: 'business',
     what: 'ให้ Sales ทำงานแบบ AE โดยมี Intelligence ช่วยคัดกรองงาน Government',
     why: 'ทุกโอกาสขายต้องมีที่มา ความเหมาะสม และคนติดตาม ไม่ใช่แค่รายชื่อโครงการ',
     meetingDirection: 'Sales เป็น AE มี Intelligence ช่วย; Screening/QC และ Revenue Mapping',
     proposedOutcome: 'รายการงานตรวจสอบแล้ว AE Owner และกระบวนการติดตาม',
     acceptance: 'แต่ละโอกาสมีที่มา ความเหมาะสม ผู้รับผิดชอบ และสถานะจริง',
-    ownerLabel: 'คุณรุ + ทีม Government; Mac ช่วย Filter/เชื่อมระบบ; ผู้พัฒนา Agent รอยืนยัน',
-    ownerBasis: 'pending',
+    ownerLabel: 'Sponsor: คุณฉาย (Shine) · 6A ทีม Government (TBC) · 6B ฝ่ายขาย (TBC)',
+    ownerBasis: 'meeting26',
+    support: 'Mac วาง Flow · ทีม Data (พี่เส็ง) สนับสนุน',
+    focus: true,
     unlocks: 'Candidate C2 — Pipeline ที่มีเจ้าของ (Pipeline ≠ รายได้)',
     pending: ['ผู้พัฒนา Agent', 'ตัวเลขรายได้ Government ยังไม่ใช้เป็น KPI ผูกพัน'],
     candidateId: 'C2',
@@ -341,8 +396,10 @@ export const workstreams: Workstream[] = [
     meetingDirection: 'เครือข่ายข่าวจังหวัด; ทดลองปัตตานี–ยะลา–นราธิวาสก่อนขยาย',
     proposedOutcome: 'Business case, ต้นทุนครบ, สิทธิในเพจ, บทบาท/QC และข้อเสนอ Pilot',
     acceptance: 'ยืนยันต้นทุนรวม/ทีม/สิทธิ/QC ก่อนเริ่ม; ประเมินรายได้จริงก่อนขยาย',
-    ownerLabel: 'พี่กอล์ฟ + ทีมข่าว; อำนาจอนุมัติธุรกิจ/งบรอยืนยัน',
-    ownerBasis: 'pending',
+    ownerLabel: 'คุณฉาย (Shine) + ทีมพี่กอล์ฟ',
+    ownerBasis: 'meeting26',
+    support: 'แยกติดตาม — ไม่อยู่ใน AI scope รอบนี้',
+    focus: false,
     unlocks: 'ข้อมูลต้นทุน/รายได้จริงสำหรับตัดสินใจขยาย (ระยะ P3)',
     pending: ['ผู้มีอำนาจอนุมัติธุรกิจ/งบ', 'วันเริ่ม Pilot จริง', 'สิทธิในเพจ'],
     candidateId: null,
@@ -363,6 +420,7 @@ export const milestones: Milestone[] = [
     owner: 'Mac', approver: 'คุณฉาย',
     dateBasis: 'proposed', dateBasisNote: 'เสนอ — แปลงจาก "ประมาณ 1 สัปดาห์" ในประชุม',
     fedBy: [], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['ร่าง Roadmap + คำถามขออนุมัติส่งถึงคุณฉาย'],
     sourceRefs: [{ source: 'S23', sections: '§32', note: 'ให้ Mac ตกผลึกแผนประมาณหนึ่งสัปดาห์' }, { source: 'E01', note: 'M0 ในร่าง v0.1' }],
   },
   {
@@ -372,6 +430,7 @@ export const milestones: Milestone[] = [
     owner: 'Mac + IT/BI + ทีมนำเสนอ', approver: 'คุณฉาย',
     dateBasis: 'meeting_date', dateBasisNote: 'วันที่ในบันทึกประชุม — ไม่ใช่การยืนยัน Calendar',
     fedBy: [], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['ทบทวนระบบที่มีและช่องว่าง', 'หมายเหตุ: นำเสนอแผนเบื้องต้นแล้วเมื่อ 26 ก.ย. (D26)'],
     sourceRefs: [{ source: 'S23', sections: '§14', note: 'มีการนำเสนอวันที่ 1 ต.ค.' }],
   },
   {
@@ -381,6 +440,7 @@ export const milestones: Milestone[] = [
     owner: 'Mac + HR + Finance + เจ้าของงาน', approver: 'คุณฉาย',
     dateBasis: 'proposed', dateBasisNote: 'เสนอ',
     fedBy: ['T01', 'T04', 'T07', 'T10', 'T13', 'T16', 'T19'], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['Scope · Owner · ทีมที่มีเวลาจริง · Baseline', 'ยืนยันลำดับ R6 + R5 เริ่มก่อน (D26) — ไม่ใช่การอนุมัติทุก Feature/งบ'],
     sourceRefs: [{ source: 'E01', note: 'M2 และการเลือก 2–3 Pilot จาก 4 Candidate' }],
   },
   {
@@ -390,6 +450,7 @@ export const milestones: Milestone[] = [
     owner: 'HR + เจ้าของงาน + Mac/IT/BI', approver: 'คุณฉายและเจ้าของงาน',
     dateBasis: 'proposed', dateBasisNote: 'เสนอ',
     fedBy: ['T02', 'T05', 'T08', 'T11', 'T14', 'T17', 'T20'], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['แบบงานที่เจ้าของงานรับรอง', 'สิทธิข้อมูลและแบบระบบเฉพาะส่วนที่ใช้'],
     sourceRefs: [{ source: 'E01', note: 'M3 ในร่าง v0.1' }],
   },
   {
@@ -399,6 +460,7 @@ export const milestones: Milestone[] = [
     owner: 'เจ้าของ Pilot + IT/BI', approver: 'เจ้าของงาน',
     dateBasis: 'proposed', dateBasisNote: 'เสนอ',
     fedBy: [], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['หลักฐานความพร้อมของ Pilot ที่ได้รับเลือก', 'ผลทดสอบ + รายการแก้ไขที่เจ้าของ Pilot ตรวจรับ', 'เงื่อนไขตรวจรับรายงานรอยืนยัน'],
     sourceRefs: [{ source: 'E01', note: 'เกณฑ์เปิดใช้/วัดผล' }],
   },
   {
@@ -408,6 +470,7 @@ export const milestones: Milestone[] = [
     owner: 'เจ้าของงาน + HR + IT/BI', approver: 'ผู้มีอำนาจตามเรื่อง',
     dateBasis: 'proposed', dateBasisNote: 'เสนอ',
     fedBy: [], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['ผลทดสอบผ่านเกณฑ์ของงานนั้น', 'สิทธิข้อมูลผ่านการตรวจ', 'มีผู้ใช้ ผู้ดูแล และแผนสำรอง', 'เปลี่ยนคนเฉพาะที่อนุมัติและรับช่วงพร้อม'],
     sourceRefs: [{ source: 'E01', note: 'เกณฑ์เปิดใช้' }],
   },
   {
@@ -417,6 +480,7 @@ export const milestones: Milestone[] = [
     owner: 'Mac + Finance + HR + เจ้าของงาน', approver: 'คุณฉาย',
     dateBasis: 'proposed', dateBasisNote: 'เสนอ',
     fedBy: [], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['ผลใช้งานก่อน–หลังตามตัววัดของแต่ละงาน', 'Finance ตรวจผลต้นทุน — ไม่สมมติว่าทุก Pilot สร้าง Savings', 'งานค้างมีเจ้าของ/วันแก้'],
     sourceRefs: [{ source: 'E01', note: 'เกณฑ์วัดผล' }],
   },
   {
@@ -426,6 +490,7 @@ export const milestones: Milestone[] = [
     owner: 'Mac + HR + เจ้าของงาน', approver: 'คุณฉาย',
     dateBasis: 'meeting_year_end', dateBasisNote: 'กรอบสิ้นปีจากประชุม; นิยามการตรวจรับเป็นข้อเสนอ',
     fedBy: ['T03', 'T09'], actualStatus: 'unconfirmed',
+    acceptanceConditions: ['หลักฐานตาม Scope สิ้นปี', 'งานข้ามปีต้องเป็นข้อยกเว้นที่อนุมัติหรือแผนขยาย — ไม่ใช่การปิดงาน'],
     sourceRefs: [{ source: 'S23', sections: '§26', note: 'กรอบ Reform สิ้นปี' }, { source: 'E01', note: 'นิยามตรวจรับ' }],
   },
 ]
@@ -467,7 +532,7 @@ export const tasks: Task[] = [
     deliverable: 'Inventory ระบบ, Access, คนดูแล/สำรอง และสภาพระบบจริง', acceptance: 'ข้อมูลพอให้ M1/M2 ตัดสินใจ', note: 'Inventory, Access, คนดูแล/สำรอง, สภาพระบบจริง' }),
   task({ id: 'T08', workstreamId: 'R3', title: 'System & Data Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T07', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'แบบเชื่อมและข้อมูลขั้นต่ำเฉพาะ Scope ที่เลือก', acceptance: 'รับรองที่ M3 — ไม่ออกแบบทุกระบบใหม่', note: 'รองรับเฉพาะ Scope ที่เลือก ไม่ออกแบบทุกระบบใหม่' }),
-  task({ id: 'T09', workstreamId: 'R3', title: 'Wave 1 Integration / Handover', start: '2026-10-26', end: '2026-12-31', priority: 'P1', predecessors: ['T08', 'M3'],
+  task({ id: 'T09', scope: ['Data Hub บน Private Cloud (ทยอยเชื่อม)', 'รหัสลูกค้าองค์กรกลาง (Organization ID)', 'สิทธิข้อมูลตามบทบาท', 'Executive AI แบบ Read-only — เป้าเชื่อมบางส่วนปลาย พ.ย.–ธ.ค. (D26 §18)'], workstreamId: 'R3', title: 'Wave 1 Integration / Handover', start: '2026-10-26', end: '2026-12-31', priority: 'P1', predecessors: ['T08', 'M3'],
     checkpoints: [
       { date: '2026-11-06', label: 'Minimum Data', basis: 'proposal' },
       { milestoneId: 'M4', label: 'ทดสอบ', basis: 'proposal' },
@@ -479,23 +544,23 @@ export const tasks: Task[] = [
   // R4
   task({ id: 'T10', workstreamId: 'R4', title: 'Archive / Rights / Use Cases', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'Inventory คลัง, ชุดทดลองที่เป็นไปได้ และ Editorial owner', acceptance: 'มีชุดที่สิทธิชัดพอให้เลือกที่ M2', note: 'หา Inventory/ชุดทดลองและ Editorial owner' }),
-  task({ id: 'T11', workstreamId: 'R4', title: 'Pilot Set / CMS Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T10', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T11', scope: ['Tag ข่าวใหม่/ชุดทดลอง (Entity/Category) → ส่งต่อ R5 จัดกลุ่ม Interest', 'ประเมิน Outsource / จัดทีม (D26 §2)'], workstreamId: 'R4', title: 'Pilot Set / CMS Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T10', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'Scope Archive/การช่วยร่างที่เลือก และคนตรวจ', acceptance: 'Editorial รับรองที่ M3', note: 'Scope Archive/การช่วยร่างที่เลือก และคนตรวจ' }),
   task({ id: 'T12', workstreamId: 'R4', title: 'Content Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T11', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C3',
     deliverable: 'คลังตัวอย่างที่ค้นหา/ใช้ซ้ำได้ และ/หรือ AI Draft → คนตรวจ → CMS', acceptance: 'ค้นหาได้ มีแหล่งที่มา คนตรวจ และใช้กับ Workflow ได้', note: 'Build → Test → Prepare → Live → Measure; ทำเมื่อ C3 ได้รับเลือกที่ M2' }),
   // R5
   task({ id: 'T13', workstreamId: 'R5', title: 'Community / Existing Base', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'Owner, สมาชิกเดิม และกิจกรรมที่เป็นไปได้', acceptance: 'มีตัวเลือกพอให้ M2 ตัดสินใจ — ไม่กำหนดแบรนด์นำร่องเอง', note: 'Owner/สมาชิกเดิม/กิจกรรมที่เป็นไปได้; ไม่กำหนดแบรนด์นำร่องเอง' }),
-  task({ id: 'T14', workstreamId: 'R5', title: 'Event / Conversion Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T13', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T14', scope: ['เลน On-ground: Register เดิม → Check-in → Session', 'เลน Online: ทดลอง LINE/Web Login ใน Sandbox พนักงาน ~1 เดือน', 'เลน Legacy: Clean ฐาน Event/สมาชิก/Print เดิม'], workstreamId: 'R5', title: 'Event / Conversion Design', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T13', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'แผนคุณค่าสมาชิก นิยามตัววัด และสิทธิข้อมูล', acceptance: 'เจ้าของแบรนด์รับรองนิยาม Conversion ที่ M3', note: 'แผนคุณค่าสมาชิก นิยามตัววัดและสิทธิข้อมูล' }),
-  task({ id: 'T15', workstreamId: 'R5', title: 'Audience Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T14', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C4',
+  task({ id: 'T15', scope: ['On-ground: Session Activity + Follow-up', 'Online: UX Review + MD sign-off ก่อน Production', 'Legacy: Map เข้า ID กลางหลังตรวจสิทธิ/คุณภาพ'], workstreamId: 'R5', title: 'Audience Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T14', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C4',
     deliverable: 'หนึ่งกิจกรรมหรือแบรนด์: ลงทะเบียน → เข้าร่วม → ติดตาม', acceptance: 'Conversion ตามนิยามที่รับรอง; ถ้าไม่มี Event จริงรายงานเป็น Sandbox', note: 'ยังไม่มี Event date; ทำเมื่อ C4 ได้รับเลือกที่ M2' }),
   // R6
   task({ id: 'T16', workstreamId: 'R6', title: 'Gov Lead Screening', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
     deliverable: 'แหล่งงาน/งบ/ความเหมาะสมที่ตรวจสอบได้', acceptance: 'แต่ละรายการมีที่มาตรวจสอบได้', note: 'แหล่งงาน/งบ/ความเหมาะสมที่ตรวจสอบได้' }),
-  task({ id: 'T17', workstreamId: 'R6', title: 'AE / Screening / QC', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T16', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
+  task({ id: 'T17', scope: ['6A Government Agent: Source ที่ตรวจสอบได้ → Alert → Screening → AE → Draft Proposal → คนตรวจ', 'Flow 1–4 และ Source ยังต้องคุยกับทีม Government (D26 §4)'], workstreamId: 'R6', title: 'AE / Screening / QC', start: '2026-10-12', end: '2026-10-23', priority: 'P1', predecessors: ['T16', 'M2'], checkpoints: [{ milestoneId: 'M3', label: 'Design Sign-off', basis: 'proposal' }], conditionalOn: null,
     deliverable: 'AE Owner, Workflow การติดตาม และผู้ดูแล Intelligence', acceptance: 'ทีม Government รับรองที่ M3', note: 'AE Owner/Workflow/การติดตาม และผู้ดูแล Intelligence' }),
-  task({ id: 'T18', workstreamId: 'R6', title: 'Government Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T17', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C2',
+  task({ id: 'T18', scope: ['6A Government ก่อน (Mockup/Flow เป้าปลาย ต.ค. แบบมีเงื่อนไข)', '6B Sales Intelligence ตามมา: Organization ID + ประวัติงาน + Rate Card Pool → โอกาส/แพ็กเกจ → เจ้าของบัญชีติดตาม'], workstreamId: 'R6', title: 'Government Wave 1', start: '2026-10-26', end: '2026-12-18', priority: 'P2', predecessors: ['T17', 'M3'], checkpoints: pilotCheckpoints, conditionalOn: 'C2',
     deliverable: 'งานที่ตรวจสอบได้ → Screening → มอบหมาย AE → ติดตาม', acceptance: 'โอกาสที่ผ่าน QC และมีการติดตามจริง — Pipeline ไม่ใช่รายได้', note: 'ไม่ต้องรอ Nation ID / Audience ID; ทำเมื่อ C2 ได้รับเลือกที่ M2' }),
   // R7
   task({ id: 'T19', workstreamId: 'R7', title: 'Cost / Revenue / Page Rights', start: '2026-09-24', end: '2026-10-09', priority: 'P0', predecessors: [], checkpoints: [], conditionalOn: null,
@@ -520,7 +585,7 @@ export const relations: Relation[] = [
   { from: 'R3', to: 'R4', type: 'feeds', shortReason: 'สิทธิ/การเข้าถึงคลังและ CMS ที่เลือก', proposalBasis: 'proposal' },
   { from: 'R3', to: 'R5', type: 'feeds', shortReason: 'สิทธิข้อมูลสมาชิก/กิจกรรมที่เลือก', proposalBasis: 'proposal' },
   { from: 'R3', to: 'R6', type: 'feeds', shortReason: 'แหล่งข้อมูลงาน Government และการติดตาม', proposalBasis: 'proposal' },
-  { from: 'R4', to: 'R5', type: 'enables', shortReason: 'Content สนับสนุน Community', proposalBasis: 'proposal' },
+  { from: 'R4', to: 'R5', type: 'enables', shortReason: 'Content สนับสนุน Community · Tag ข่าวใหม่/ชุดทดลอง → จัดกลุ่ม Interest (ไม่รอ Archive ทั้งหมด)', proposalBasis: 'proposal' },
   { from: 'R5', to: 'R7', type: 'enables', shortReason: 'อาจใช้รูปแบบสมาชิก/กิจกรรมร่วมกัน — ไม่ใช่เงื่อนไขบังคับของ Local Pilot', proposalBasis: 'proposal' },
 ]
 
@@ -570,47 +635,61 @@ export const pilotSelectionCriteria = ['ผลธุรกิจที่ต้�
 
 export const decisions: Decision[] = [
   {
-    id: 'D1', title: 'Year-end Scope',
-    question: 'Reform ครอบคลุมฝ่ายไหน · อะไรคือ Done',
+    id: 'D1', title: '6 Focus + Year-end Scope',
+    question: 'ยืนยัน R1–R6 เป็นงานโฟกัส · R7 แยกติดตาม · อะไรคือ Done สิ้นปี',
     why: 'ถ้า Scope ไม่ชัด การตรวจรับ M7 จะวัดไม่ได้',
-    conditions: ['รายชื่อฝ่าย/งานใน Scope', 'นิยาม "ส่งมอบแล้ว" ของแต่ละงาน', 'งานที่อยู่นอก Scope ปี 2026'],
+    conditions: ['R1–R6 โฟกัส / R7 แยกติดตาม (D26)', 'นิยาม "ส่งมอบแล้ว" ของแต่ละงาน', 'งานข้ามปี = ข้อยกเว้นหรือแผนขยายที่อนุมัติ'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
   },
   {
-    id: 'D2', title: 'Owner & Authority',
-    question: 'Owner รายงาน · ขอบเขต Mac/IT/BI · Approver',
-    why: 'ฝ่ายธุรกิจเป็นเจ้าของผลลัพธ์ — Mac เชื่อมแผน ไม่ใช่เจ้าของทุกงาน',
-    conditions: ['เจ้าของ R1–R7', 'ขอบเขตและวันรับโอน IT/BI', 'ผู้อนุมัติของแต่ละ Gate'],
+    id: 'D2', title: 'Owners ที่ยังเป็น TBC',
+    question: 'ยืนยันชื่อทีม Government (6A), เจ้าของ Sales Intelligence (6B) และ Delivery team R4',
+    why: 'บันทึกมีชื่อ/ทีมที่คลาดเคลื่อน — ต้องยืนยันก่อน Kick-off',
+    conditions: ['6A Government: ชื่อทีม', '6B Sales: ฝ่ายขาย · คุณกิ๊บ ถูกกล่าวถึง', 'R4: ทีมภายในหรือ Outsource', 'ผู้อนุมัติของแต่ละ Gate'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
   },
   {
-    id: 'D3', title: 'Team · Budget · Wave 1',
-    question: 'เลือก 2–3 AI Pilot · Local Pilot อนุมัติแยก',
-    why: 'ไม่เริ่มทุกระบบพร้อมกัน — ลงทุนเฉพาะที่พร้อมและพิสูจน์ได้',
-    conditions: ['ทีมและงบที่ใช้ได้จริง', 'Pilot 2–3 รายการจาก C1–C4', 'Local Pilot: ต้นทุน/สิทธิในเพจ/QC ก่อนอนุมัติ'],
+    id: 'D3', title: 'Team · Capacity · Outsource',
+    question: 'ทีมที่มีเวลาทำจริง · งบ Outsource R4 · ลำดับ R6 → R5 ก่อน',
+    why: 'Mac ประเมินว่าโหลดทีมสูง — ต้องเลือกลำดับและกำลังส่งมอบ',
+    conditions: ['Timeline + Capacity ส่งคุณฉายหลังประชุมทีม (วันนัด TBC)', 'Outsource R4 = เพิ่มกำลังส่งมอบ ไม่แทนการตัดสินใจ Build/Buy', 'ประวัติ: ข้อเสนอเดิมเลือก 2–3 จาก C1–C4 (E01) — ประชุม 26 ก.ย. ระบุ R6/R5 เริ่มก่อน'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
   },
   {
-    id: 'D4', title: 'Milestones & Gates',
-    question: 'ยืนยัน M0–M7 · เกณฑ์ Go / Adjust / Hold',
+    id: 'D4', title: 'Milestones & Dates',
+    question: 'ยืนยัน M0–M7 · วันที่ที่ขัดกัน · งานข้ามปี',
     why: 'ทุกจุดตรวจต้องมีสิ่งส่งมอบและผู้ตัดสิน ไม่ใช่แค่ถึงวันที่',
-    conditions: ['วันที่ M0–M7', 'เกณฑ์ Go / Adjust / Hold', 'Weekly Review 30 นาที (ข้อเสนอ)'],
+    conditions: ['วันที่ M0–M7 และ Checkpoint ที่เสนอ', 'จุดที่วันที่ขัดกัน (ดูใน Timeline)', 'เกณฑ์ Go / Adjust / Hold'],
     relatedMilestone: 'M2', status: 'รอหารือ/อนุมัติ',
+  },
+  {
+    id: 'D5', title: 'Reuse → Buy → Build',
+    question: 'ใช้ของเดิมก่อน · ซื้อ/ตั้งค่า · สร้างเฉพาะช่องว่าง',
+    why: 'ยังไม่ฟันธง Salesforce/SAP หรือ Vendor ใด (D26 §10)',
+    conditions: ['ความเหมาะสมกับงาน', 'การเชื่อมระบบ + สิทธิ/ส่งออกข้อมูล', 'เวลาทีม · ต้นทุน · ผู้ดูแลหลังส่งมอบ'],
+    relatedMilestone: 'M3', status: 'รอหารือ/อนุมัติ',
+  },
+  {
+    id: 'D6', title: 'Login / UX Policy',
+    question: 'บังคับ Login หรือไม่ · ทดลองใน Sandbox ก่อน · MD sign-off',
+    why: 'กระทบ Traffic และ User Experience ของเว็บหลัก (D26 §9, §25)',
+    conditions: ['MD workshop จบด้วย Use case + Owner + ขอบเขต UX/ข้อมูล + แผนทดสอบ (ข้อเสนอ)', 'ไม่สั่ง Force login บนเว็บหลักจากเว็บนี้', 'อายุ Login LINE ต้องตรวจจากเอกสารทางการ'],
+    relatedMilestone: 'M3', status: 'รอหารือ/อนุมัติ',
   },
 ]
 
 /** Scene 01 — outcomes. */
 export const outcomes = [
   {
-    id: 'O1', label: 'Agile Organization', expands: ['Workforce', 'Workflow', 'JD/KPI', 'Delayer'], workstreams: ['R1', 'R2'] as WorkstreamId[],
+    id: 'O1', label: 'Agile Intelligence', expands: ['Workforce', 'Workflow', 'JD/KPI', 'Paperless'], workstreams: ['R1', 'R2'] as WorkstreamId[],
     sourceRefs: [{ source: 'S23', sections: '§1–3', note: 'Efficiency/Workforce, Nation House' }] as SourceRef[],
   },
   {
-    id: 'O2', label: 'Connected Data', expands: ['Internal System', 'CRM', 'Audience Data', 'Content Archive'], workstreams: ['R3', 'R4', 'R5'] as WorkstreamId[],
+    id: 'O2', label: 'Connected Data', expands: ['Data Hub', 'Executive AI', 'Nation ID', 'Content Archive'], workstreams: ['R3', 'R4', 'R5'] as WorkstreamId[],
     sourceRefs: [{ source: 'S23', sections: '§3, §26', note: 'Nation House, IT–BI' }] as SourceRef[],
   },
   {
-    id: 'O3', label: 'Business Growth', expands: ['4C Community', 'Gov Intelligence', 'Local Network'], workstreams: ['R5', 'R6', 'R7'] as WorkstreamId[],
+    id: 'O3', label: 'Business Growth', expands: ['4C Community', 'Gov + Sales Intelligence', 'Local Network'], workstreams: ['R5', 'R6', 'R7'] as WorkstreamId[],
     sourceRefs: [{ source: 'S23', sections: '§32', note: 'Mac/ทีม/Media Tech' }] as SourceRef[],
   },
 ]
@@ -681,26 +760,47 @@ export const dependencyPaths: DepPath[] = [
     lanes: [{ nodes: [
       { id: 'd1', label: 'Scope/Owner', ref: { milestone: 'M2' }, note: 'เลือก Pilot และเจ้าของที่ M2' },
       { id: 'd2', label: 'Data Rights & Quality', ref: { task: 'T08' }, note: 'จุดห้ามข้าม: สิทธิข้อมูลก่อนใช้จริง' },
-      { id: 'd3', label: 'Minimum Data / Prototype', ref: { task: 'T09' }, note: 'ข้อมูลขั้นต่ำเสนอพร้อม 6 พ.ย.' },
+      { id: 'd3', label: 'Minimum Data / Prototype', ref: { task: 'T09' }, note: 'ข้อมูลขั้นต่ำเสนอพร้อม 6 พ.ย. — Prototype ด้วยข้อมูลจำลองได้' },
+      { id: 'dx1', label: 'Integrated Business View', ref: { task: 'T09' }, note: 'Module/data owner + Minimum IDs/API/สิทธิ/คุณภาพ → มุมมองธุรกิจที่เชื่อมกันบางส่วน (เป้าปลาย พ.ย.–ธ.ค.)' },
       { id: 'd4', label: 'User Test', ref: { milestone: 'M4' }, note: 'จุดห้ามข้าม: คนตรวจ AI ก่อนเผยแพร่' },
-      { id: 'd5', label: 'Go-live', ref: { milestone: 'M5' }, note: 'ผ่านทดสอบ สิทธิ ผู้ดูแล และแผนสำรอง' },
+      { id: 'd5', label: 'Go-live', ref: { milestone: 'M5' }, note: 'Training + UAT + ผู้ดูแล/แผนสำรอง' },
+      { id: 'dx2', label: 'Executive AI (Read-only)', ref: { task: 'T09' }, note: 'ถามข้อมูลธุรกิจแบบอ่านอย่างเดียวก่อน — การอนุมัติ/สั่งงานแยกตรวจสิทธิ' },
       { id: 'd6', label: 'Measure', ref: { milestone: 'M6' }, note: 'เทียบ Baseline — เวลา ≠ เงินสดที่ประหยัดแล้ว' },
     ] }],
   },
   {
-    id: 'business', title: 'Business', usesR3: true,
-    parallel: 'Government ไม่ต้องรอ Audience ID; Community Planning เริ่มก่อน Platform เต็มรูปแบบได้',
+    id: 'business', title: 'Commercial Intelligence (R6)', usesR3: true,
+    parallel: 'Government Mockup ไม่รอ Nation ID หรือ R3 ทั้งก้อน · Sales BI เริ่ม Mockup ด้วยข้อมูลจำลองได้',
     lanes: [
-      { label: 'Government', nodes: [
-        { id: 'g1', label: 'Verified Leads', ref: { task: 'T16' }, note: 'แหล่งงาน/งบ/ความเหมาะสมตรวจสอบได้' },
+      { label: '6A Government Agent — เริ่มก่อน', nodes: [
+        { id: 'g1', label: 'Verified Source', ref: { task: 'T16' }, note: 'แหล่งงบ/ประกาศที่ตรวจสอบได้ — Source ยังต้องคุยกับทีม Government' },
+        { id: 'g5', label: 'Alert', ref: { task: 'T17' }, note: 'แจ้งเตือนโครงการใหม่รายวัน' },
         { id: 'g2', label: 'Screening/QC', ref: { task: 'T17' }, note: 'คัดความเหมาะสมก่อนมอบหมาย' },
-        { id: 'g3', label: 'AE', ref: { task: 'T17' }, note: 'มี AE Owner ต่อโอกาส — AI ไม่ยื่นข้อเสนอผูกพันเอง' },
-        { id: 'g4', label: 'Follow-up', ref: { task: 'T18' }, note: 'สถานะจริงของแต่ละโอกาส — Pipeline ≠ รายได้' },
+        { id: 'g3', label: 'AE', ref: { task: 'T17' }, note: 'มี AE Owner ต่อโอกาส' },
+        { id: 'g6', label: 'Draft Proposal', ref: { task: 'T18' }, note: 'ร่างข้อเสนอ/PR — ไม่เรียกทุก Draft ว่า TOR ของหน่วยงานรัฐ' },
+        { id: 'g4', label: 'Human Check', ref: { task: 'T18' }, note: 'AI ไม่ยื่นงาน/ผูกพันราคาเอง · Pipeline ≠ รายได้' },
       ] },
-      { label: 'Community', nodes: [
-        { id: 'c1', label: 'Member Value + Event Plan + Data Rights', ref: { task: 'T14' }, note: 'วางแผนได้ก่อน Platform เต็มรูปแบบ' },
-        { id: 'c2', label: 'Event', ref: { task: 'T15' }, note: 'ยังไม่มี Event date ที่ยืนยัน' },
-        { id: 'c3', label: 'Conversion', ref: { task: 'T15' }, note: 'ตามนิยามที่รับรอง; ไม่มี Event จริง = Sandbox' },
+      { label: '6B Sales Intelligence — ตามมา', nodes: [
+        { id: 's1', label: 'Org ID + Rate Card Pool', ref: { task: 'T09' }, note: 'Minimum customer/account data + Rate Card' },
+        { id: 's2', label: 'Opportunity View', ref: { task: 'T18' }, note: 'เห็นโอกาส/แพ็กเกจที่เสนอ' },
+        { id: 's3', label: 'Account Owner', ref: { task: 'T18' }, note: 'เจ้าของบัญชีติดตาม' },
+        { id: 's4', label: 'Record Result', ref: { task: 'T18' }, note: 'แยก Pipeline / ข้อเสนอ / Closed-won / รายได้ตามนิยามบัญชี' },
+      ] },
+    ],
+  },
+  {
+    id: 'audience', title: 'Nation ID & Audience (R5)', usesR3: true,
+    parallel: 'Legacy cleansing ทำคู่ขนาน · Content Tag → Interest ไม่รอ Archive ทั้งหมด',
+    lanes: [
+      { label: 'On-ground', nodes: [
+        { id: 'c1', label: 'Register (รายงานว่าพร้อม)', ref: { task: 'T14' }, note: 'ใช้ระบบ Register เดิมของ Forum — พร้อมไม่เท่ากับ Session tracking เสร็จ' },
+        { id: 'c2', label: 'Check-in / Session', ref: { task: 'T15' }, note: 'ลงทะเบียน ≠ มางานจริง · แยก Event Session จาก Web session' },
+        { id: 'c3', label: 'Follow-up', ref: { task: 'T15' }, note: 'เชิญกิจกรรมที่เกี่ยวข้อง แล้ววัดผล' },
+      ] },
+      { label: 'Online', nodes: [
+        { id: 'c4', label: 'Link Account + Data Rights', ref: { task: 'T14' }, note: 'วิธีเชื่อมบัญชี + สิทธิข้อมูล → รวมพฤติกรรมรายบุคคล (ไม่ใช่เงื่อนไขก่อนร่าง UX)' },
+        { id: 'c5', label: 'Sandbox + UX Review', ref: { task: 'T15' }, note: 'ทดลองในเว็บพนักงาน ~1 เดือน · MD sign-off ก่อน Production' },
+        { id: 'c6', label: 'Interest', ref: { task: 'T15' }, note: 'Content Tag + Activity ที่เชื่อมได้ → สัญญาณความสนใจ' },
       ] },
     ],
   },
@@ -754,8 +854,8 @@ export const notEqual = [
 ]
 
 export const responsibility = [
-  { who: 'คุณฉาย', role: 'Approve' },
-  { who: 'Mac', role: 'Integrate' },
+  { who: 'คุณฉาย (Shine)', role: 'Sponsor · Approve' },
+  { who: 'Mac', role: 'Head Project' },
   { who: 'BU Owners', role: 'Deliver' },
   { who: 'IT/BI', role: 'System & Data' },
 ]

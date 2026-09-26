@@ -19,7 +19,7 @@ import {
 
 export type TaskPatch = Partial<Pick<Task, 'title' | 'short' | 'start' | 'end' | 'note' | 'deliverable' | 'acceptance' | 'owner'>>
 export type MilestonePatch = Partial<Pick<Milestone, 'date' | 'label' | 'deliverables' | 'acceptance' | 'owner' | 'approver'>>
-export type WorkstreamPatch = Partial<Pick<Workstream, 'title' | 'shortTitle' | 'ownerLabel'>>
+export type WorkstreamPatch = Partial<Pick<Workstream, 'title' | 'shortTitle' | 'ownerLabel' | 'support'>>
 
 export interface PlanEdits {
   tasks: Record<string, TaskPatch>
@@ -39,7 +39,11 @@ const baseTasks: Task[] = tasks.map((t) => ({ ...t }))
 const baseMilestones: Milestone[] = milestones.map((m) => ({ ...m }))
 const baseWorkstreams: Workstream[] = workstreams.map((w) => ({ ...w }))
 
-const LOCAL_KEY = 'nation-plan-edits-v1'
+/** Storage is namespaced per document so two copies of the page never overwrite each other. */
+export const DOCUMENT_ID = 'nation-strategy-to-execution'
+export const SCHEMA_VERSION = 2
+const LOCAL_KEY = `nation:${DOCUMENT_ID}:edits:v${SCHEMA_VERSION}`
+const LEGACY_LOCAL_KEY = 'nation-plan-edits-v1'
 const UI_KEY = 'nation-ui-v1'
 const ISO = /^\d{4}-\d{2}-\d{2}$/
 
@@ -90,7 +94,7 @@ function sanitize(raw: unknown): PlanEdits {
     e.milestones[id] = clean({ date: date(p.date), label: str(p.label, 80), deliverables: str(p.deliverables), acceptance: str(p.acceptance), owner: str(p.owner, 200), approver: str(p.approver, 200) })
   }
   for (const [id, p] of Object.entries(r.workstreams ?? {})) {
-    e.workstreams[id] = clean({ title: str(p.title, 80), shortTitle: str(p.shortTitle, 40), ownerLabel: str(p.ownerLabel, 200) })
+    e.workstreams[id] = clean({ title: str(p.title, 80), shortTitle: str(p.shortTitle, 40), ownerLabel: str(p.ownerLabel, 200), support: str(p.support, 300) })
   }
   for (const t of Array.isArray(r.added) ? r.added : []) {
     if (!t || typeof t.id !== 'string' || !/^N\d{1,4}$/.test(t.id) || !wsById[t.workstreamId as WorkstreamId] || !date(t.start) || !date(t.end)) continue
@@ -101,6 +105,9 @@ function sanitize(raw: unknown): PlanEdits {
     if (/^[\w.:-]{1,160}$/.test(k) && typeof v === 'string') e.text[k] = v.slice(0, 2000)
   }
   e.savedAt = typeof r.savedAt === 'string' ? r.savedAt : null
+  // Migration: the Direction card and its panel now share one key. An earlier panel-only
+  // override spelled "Agile Inteligence"; the baseline label is now "Agile Intelligence".
+  if (/^\s*agile\s+inteligence\s*$/i.test(e.text['d.outcome.O1.title'] ?? '')) delete e.text['d.outcome.O1.title']
   return e
 }
 
@@ -313,16 +320,32 @@ function buildDocument(state: PlanEdits): string {
 }
 
 /** Load embedded/stored edits before the first render. */
+let loadNotice = ''
+/** One-line message about where the edits on screen came from (e.g. a newer local draft). */
+export const getLoadNotice = () => loadNotice
+
+function readLocal(): unknown {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY) ?? localStorage.getItem(LEGACY_LOCAL_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+const stampOf = (x: unknown) => (x && typeof x === 'object' && typeof (x as PlanEdits).savedAt === 'string' ? (x as PlanEdits).savedAt as string : '')
+
 export function initPlanStore() {
-  // Inside claude.ai the page itself is the record; elsewhere this browser's storage is.
+  // Inside claude.ai the published page is the record; elsewhere a newer draft in this browser wins.
   const inViewer = !!document.getElementById('app-js') && typeof (window as unknown as { claude?: { use?: unknown } }).claude?.use === 'function'
   let loaded: unknown = null
   try {
     const el = document.getElementById('plan-edits')
     if (el?.textContent?.trim()) loaded = JSON.parse(el.textContent)
   } catch { /* ignore malformed */ }
-  if (!loaded && !inViewer) {
-    try { const raw = localStorage.getItem(LOCAL_KEY); if (raw) loaded = JSON.parse(raw) } catch { /* ignore */ }
+  if (!inViewer) {
+    const local = readLocal()
+    if (local && (!loaded || stampOf(local) > stampOf(loaded))) {
+      if (loaded) loadNotice = 'เปิดฉบับร่างที่บันทึกในเบราว์เซอร์นี้ (ใหม่กว่าฉบับในไฟล์)'
+      loaded = local
+    }
   }
   edits = sanitize(loaded)
   apply()
@@ -338,4 +361,25 @@ export function initPlanStore() {
     }
     emit()
   }).catch(() => { saveMode = 'local'; emit() })
+}
+
+// ---- export / import ----------------------------------------------------------
+
+/** Current edits as JSON (with document id + schema), for backup or moving to another copy. */
+export function exportEdits(): string {
+  return JSON.stringify({ documentId: DOCUMENT_ID, schemaVersion: SCHEMA_VERSION, exportedAt: new Date().toISOString(), edits }, null, 2)
+}
+
+/** Validate and apply exported JSON. Never executes anything from the data. */
+export function importEdits(json: string): { ok: boolean; message: string } {
+  let parsed: unknown
+  try { parsed = JSON.parse(json) } catch { return { ok: false, message: 'ไม่ใช่ JSON ที่อ่านได้' } }
+  const wrap = parsed as { documentId?: unknown; edits?: unknown }
+  if (wrap && typeof wrap === 'object' && 'documentId' in wrap && wrap.documentId !== DOCUMENT_ID) {
+    return { ok: false, message: 'ไฟล์นี้เป็นของเอกสารอื่น — ไม่นำเข้า' }
+  }
+  const body = wrap && typeof wrap === 'object' && 'edits' in wrap ? wrap.edits : parsed
+  const clean = sanitize(body)
+  commit((e) => { Object.assign(e, clean) })
+  return { ok: true, message: 'นำเข้าแล้ว — จะบันทึกอัตโนมัติ' }
 }

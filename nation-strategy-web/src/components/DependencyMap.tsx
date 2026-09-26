@@ -4,13 +4,14 @@ import { SceneShell } from './SceneShell'
 import { E } from './Editable'
 import { Icon, type IconName } from './Icon'
 
-const PATH_ICON: Record<string, IconName> = { people: 'people', data: 'data', business: 'growth', local: 'local' }
+const PATH_ICON: Record<string, IconName> = { people: 'people', data: 'data', business: 'growth', audience: 'community', local: 'local' }
 /** Proposed no-skip gates (shown with a lock). */
-const NO_SKIP = new Set(['p3', 'p5', 'd2', 'd4', 'l1'])
+const NO_SKIP = new Set(['p3', 'p5', 'd2', 'd4', 'l1', 'g4', 'c4'])
 const PARALLEL: Record<string, string> = {
   people: 'Survey คน + งาน + ระบบพร้อมกัน',
   data: 'Prototype ด้วย Mock/Allowed Data ได้ก่อน',
-  business: 'Gov ไม่รอ Audience ID · Community Plan ไม่รอ Platform',
+  business: 'Government ก่อน → Sales ตามมา · Mockup ไม่รอ Nation ID',
+  audience: 'Legacy cleansing คู่ขนาน · Tag → Interest ไม่รอ Archive',
   local: 'เตรียมคู่ขนาน · ไม่รอ AI Pilots',
 }
 

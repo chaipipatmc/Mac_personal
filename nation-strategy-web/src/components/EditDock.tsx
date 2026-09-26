@@ -36,7 +36,7 @@ export function ModeSwitch() {
 
 /** Toolbar pinned to the bottom of the screen while in Edit mode. */
 export function EditDock() {
-  const { editMode, setEditMode } = useApp()
+  const { editMode, setEditMode, select } = useApp()
   const [confirmReset, setConfirmReset] = useState(false)
   const save = getSaveState()
   if (!editMode) return null
@@ -51,6 +51,8 @@ export function EditDock() {
       {editCount() > 0 && (confirmReset
         ? <span className="confirm"><span>คืนค่าเดิมทั้งหมด?</span><button type="button" className="seg danger" onClick={() => { resetAll(); setConfirmReset(false) }}>Reset</button><button type="button" className="seg" onClick={() => setConfirmReset(false)}>Cancel</button></span>
         : <button type="button" className="seg" onClick={() => setConfirmReset(true)}>Reset all</button>)}
+      <button type="button" className="seg" aria-haspopup="dialog" onClick={(e) => select({ kind: 'owners', id: 'owners' }, e.currentTarget)}><Icon name="userCheck" size={16} />Owners</button>
+      <button type="button" className="seg" aria-haspopup="dialog" onClick={(e) => select({ kind: 'backup', id: 'backup' }, e.currentTarget)}>Backup</button>
       <span className="dock-hint">คลิกข้อความที่มีเส้นประเพื่อแก้คำ · Timeline ลากปรับวันได้</span>
       <button type="button" className="seg seg-present" onClick={() => setEditMode(false)}><Icon name="check" size={16} />Done → Present</button>
     </div>

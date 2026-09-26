@@ -4,6 +4,9 @@ import {
   wsById, yearEndCheckpoints, relations, noSkipRules, planState,
   type Basis, type MilestoneId, type SourceRef, type WorkstreamId,
 } from './nationPlan'
+import {
+  connectedNodes, focusTiers, nationIdBoxes, openQuestions26, proposedCheckpoints, r6Tracks, type InfoNode,
+} from './upgrade26'
 import { checkpointTasks, milestonesFedBy, successorsOf } from '../lib/graph'
 import { fmtDate, fmtRange } from '../lib/dates'
 import type { Selection, TimelineFocus } from '../lib/selection'
@@ -29,6 +32,10 @@ export interface DetailContent {
   sourceRefs: SourceRef[]
   timeline?: TimelineFocus
   extra?: { heading: string; items: string[]; tone?: 'caution' | 'plain' }
+  /** Interactive block rendered by the panel (owners board, backup, flows…). */
+  custom?: 'owners' | 'backup' | 'issues' | 'entities' | 'lineflow' | 'r6' | 'r5'
+  /** Hide the What/Why/… rows (tool panels). */
+  hideRows?: boolean
 }
 
 const f = (text: string, more?: string[]): Field => ({ text, more: more?.length ? more : undefined })
@@ -53,10 +60,10 @@ function workstreamDetail(id: WorkstreamId): DetailContent {
   const rels = relations.filter((r) => r.from === id || r.to === id)
   return {
     kindLabel: 'Workstream', code: w.id, title: w.title,
-    badges: ['meeting', 'proposal', ...(w.ownerBasis === 'pending' ? (['pending'] as Basis[]) : [])],
+    badges: [w.ownerBasis === 'meeting26' ? 'meeting26' : 'meeting', 'proposal', ...(w.ownerBasis === 'pending' || /TBC/.test(w.ownerLabel) ? (['pending'] as Basis[]) : [])],
     what: f(w.what, [`ทิศทางจากประชุม: ${w.meetingDirection}`]),
     why: f(w.why),
-    owner: f(w.ownerLabel, [w.ownerBasis === 'pending' ? 'สถานะ: รอยืนยัน' : 'สถานะ: เสนอ — รออนุมัติ']),
+    owner: f(w.ownerLabel, [`Support: ${w.support}`, w.ownerBasis === 'pending' ? 'สถานะ: รอยืนยัน' : w.ownerBasis === 'meeting26' ? 'ที่มา: ประชุม 26 ก.ย. — ชื่อยังแก้ไขได้' : 'สถานะ: เสนอ — รออนุมัติ']),
     timing: f(`${fmtRange(ts[0].start, ts[ts.length - 1].end)} · วันที่เสนอ`, ts.map((t) => `${t.id} ${t.title}: ${fmtRange(t.start, t.end)}`)),
     prereq: f('เริ่มสำรวจได้ทันที ไม่ต้องรอ Workstream อื่น', rels.filter((r) => r.to === id || r.bidirectional).map((r) => `${r.from === id ? r.to : r.from} → ${id}: ${r.shortReason} (สนับสนุน)`)),
     deliverable: f(w.proposedOutcome, [`ตรวจรับจาก: ${w.acceptance}`]),
@@ -66,6 +73,7 @@ function workstreamDetail(id: WorkstreamId): DetailContent {
     prereqLinks: ts.map((t) => linkOf(t.id)),
     sourceRefs: [...w.sourceRefs, { source: 'E01', note: 'สิ่งส่งมอบ/ตรวจรับเป็นข้อเสนอจากร่าง v0.1' }],
     timeline: { workstream: id },
+    custom: id === 'R6' ? 'r6' : id === 'R5' ? 'r5' : undefined,
     extra: id === 'R1'
       ? { heading: 'ฟังก์ชันที่หารือว่าจะเพิ่มได้ (ไม่ใช่ Org Chart ที่อนุมัติ)', items: r1DiscussedFunctions, tone: 'caution' }
       : id === 'R3'
@@ -89,7 +97,7 @@ function taskDetail(id: string): DetailContent {
   return {
     kindLabel: 'Work Package', code: t.id, title: t.title,
     badges: ['proposal', ...(t.conditionalOn ? (['pending'] as Basis[]) : [])],
-    what: f(t.note),
+    what: f(t.note, t.scope?.length ? ['ขอบเขตจากประชุม 26 ก.ย.:', ...t.scope] : undefined),
     why: f(w.why),
     owner: f(t.owner ?? w.ownerLabel),
     timing: f(`${fmtRange(t.start, t.end)} · ${basisLabel(t.dateBasis)}`, cps.length ? ['จุดตรวจระหว่างทาง (อยู่ภายในแถบ ไม่ใช่เงื่อนไขก่อนเริ่ม):', ...cps] : undefined),
@@ -115,12 +123,15 @@ function milestoneDetail(id: MilestoneId): DetailContent {
     why: f(m.acceptance),
     owner: f(m.owner, [`ผู้รับรอง: ${m.approver}`]),
     timing: f(`${fmtDate(m.date)} · ${m.dateBasisNote}`),
-    prereq: f(m.fedBy.length ? m.fedBy.map((t) => linkOf(t).label).join(', ') : 'ไม่มีงานก่อนหน้าบังคับ'),
+    prereq: m.fedBy.length
+      ? f(m.fedBy.map((t) => linkOf(t).label).join(', '), m.acceptanceConditions.map((c) => `ตรวจ: ${c}`))
+      : f('ตรวจตามเงื่อนไข Gate', m.acceptanceConditions),
     prereqLinks: m.fedBy.map(linkOf),
-    deliverable: f(m.acceptance, ['ยังไม่มี Gate ใดผ่านแล้ว — สถานะจริง: ยังไม่ยืนยัน']),
+    deliverable: f(m.acceptance, [...m.acceptanceConditions.map((c) => `✓ ${c}`), 'ยังไม่มี Gate ใดผ่านแล้ว — สถานะจริง: ยังไม่ยืนยัน']),
     unlocks: f(unlock.length ? unlock.map((t) => linkOf(t).label).join(', ') : inside.length ? `ตรวจภายในแถบ: ${inside.join(', ')}` : '—'),
     unlockLinks: [...unlock, ...inside].map(linkOf),
-    pending: f('เกณฑ์ Gate เป็นข้อเสนอ แม้วันที่บางรายการมาจากบันทึก'),
+    pending: f('เกณฑ์ Gate เป็นข้อเสนอ แม้วันที่บางรายการมาจากบันทึก',
+      proposedCheckpoints.filter((c) => c.gate === id).map((c) => `Checkpoint ที่เสนอ ${c.id} ${c.label} · ${c.windowText}`)),
     sourceRefs: m.sourceRefs,
     timeline: { milestone: id },
   }
@@ -274,10 +285,62 @@ function decisionDetail(id: string): DetailContent {
     deliverable: f(`เงื่อนไข: ${d.conditions[0]}`, d.conditions.slice(1)),
     unlocks: f('เริ่มงานตาม Milestone ถัดไป'), unlockLinks: [linkOf(d.relatedMilestone)],
     pending: f(`สถานะ: ${d.status} — เว็บนี้ไม่ส่งผลการตัดสินใจ`),
-    sourceRefs: [{ source: 'E01', note: 'เรื่องขออนุมัติ' }],
+    sourceRefs: [{ source: 'E01', note: 'เรื่องขออนุมัติ' }, { source: 'D26', note: 'ปรับตามประชุม 26 ก.ย.' }],
     timeline: { milestone: d.relatedMilestone },
+    extra: id === 'D4' ? { heading: 'วันที่ที่บันทึกไม่ตรงกัน', items: openQuestions26.slice(0, 3), tone: 'caution' } : undefined,
   }
 }
+
+
+function infoDetail(kindLabel: string, n: InfoNode): DetailContent {
+  const w = n.workstreamId ? wsById[n.workstreamId] : null
+  return {
+    kindLabel, title: n.label, badges: [n.basis, 'pending'],
+    what: f(n.what, n.points), why: f(n.why),
+    owner: f(w ? `${w.id} · ${w.ownerLabel}` : '—'),
+    timing: null, prereq: null,
+    deliverable: n.kpis ? f(`วัดผล: ${n.kpis[0]}`, n.kpis.slice(1)) : null,
+    unlocks: w ? f(`${w.id} ${w.title}`) : null, unlockLinks: w ? [linkOf(w.id)] : undefined,
+    pending: f('ภาพแนวคิดเพื่อสื่อสาร — ยังไม่ใช่ระบบที่สร้าง/ซื้อแล้ว'),
+    sourceRefs: n.sourceRefs,
+    timeline: w ? { workstream: w.id } : undefined,
+    extra: n.caution ? { heading: 'ข้อควรระวัง', items: n.caution, tone: 'caution' } : undefined,
+  }
+}
+
+function focusDetail(id: string): DetailContent {
+  const t = focusTiers.find((x) => x.id === id)!
+  return {
+    kindLabel: 'Focus', code: t.id, title: t.label, badges: [t.basis, 'pending'],
+    what: f(t.items.map((i) => `${i.ws} ${i.text}`).join(' · ')), why: f(t.note),
+    owner: f(t.items.map((i) => `${i.ws}: ${wsById[i.ws].ownerLabel}`).join(' · ')),
+    timing: f('ดูช่วงงานใน Timeline — วันที่เสนอ'), prereq: null, deliverable: null,
+    unlocks: null, unlockLinks: t.items.map((i) => linkOf(i.ws)),
+    pending: f('ลำดับจากประชุม 26 ก.ย. — ไม่ใช่การอนุมัติงบหรือวันเปิดใช้', ['ประวัติ: ข้อเสนอเดิม "เลือก 2–3 จาก C1–C4" อยู่ใน D3']),
+    sourceRefs: [{ source: 'D26', sections: '§6, §24, §27', note: 'R6 และ R5 เริ่มก่อน · R7 แยกติดตาม' }, { source: 'P26', note: 'การจัดชั้น Focus เป็นข้อเสนอการสื่อสาร' }],
+  }
+}
+
+function cp26Detail(id: string): DetailContent {
+  const c = proposedCheckpoints.find((x) => x.id === id)!
+  const m = msById[c.gate]
+  return {
+    kindLabel: 'Checkpoint ที่เสนอ', code: c.id, title: c.label, badges: ['proposal', 'pending'],
+    what: f(c.meaning), why: f(`ผูกกับ Gate ${m.id} ${m.label} — ไม่ใช่ Milestone ใหม่`),
+    owner: f(m.owner),
+    timing: f(`${c.windowText}${c.targetWindow ? ` (${fmtRange(c.targetWindow.from, c.targetWindow.to)})` : ''} · วันยืนยัน: TBC`),
+    prereq: null, prereqLinks: [linkOf(m.id)],
+    deliverable: f(m.acceptanceConditions[0] ?? m.acceptance, m.acceptanceConditions.slice(1)),
+    unlocks: null,
+    pending: f('ไม่ย้าย M0–M7 อัตโนมัติ — รอยืนยันวันจริง'),
+    sourceRefs: c.sourceRefs, timeline: { milestone: m.id },
+  }
+}
+
+const tool = (kindLabel: string, title: string, custom: DetailContent['custom'], sourceRefs: SourceRef[] = [], badges: Basis[] = ['proposal']): DetailContent => ({
+  kindLabel, title, badges, what: null, why: null, owner: null, timing: null, prereq: null, deliverable: null,
+  unlocks: null, pending: null, sourceRefs, custom, hideRows: true,
+})
 
 export function getDetail(sel: Selection): DetailContent {
   switch (sel.kind) {
@@ -309,6 +372,28 @@ export function getDetail(sel: Selection): DetailContent {
       extra: { heading: 'ทีมสนับสนุน', items: [supportTeamNote] },
     }
     case 'p3': return priorityDetail('P3')
+    case 'connected': return infoDetail('Connected Organization', connectedNodes.find((n) => n.id === sel.id)!)
+    case 'nid': return infoDetail('Nation ID', nationIdBoxes.find((n) => n.id === sel.id)!)
+    case 'focus': return focusDetail(sel.id)
+    case 'cp26': return cp26Detail(sel.id)
+    case 'r6track': {
+      const t = r6Tracks.find((x) => x.id === sel.id)!
+      return {
+        kindLabel: `R6 · ${t.order}`, code: t.id, title: t.title, badges: [t.basis, 'pending'],
+        what: f(t.flow.join(' → ')), why: f(wsById.R6.why), owner: f(t.owner),
+        timing: f(t.id === '6A' ? 'เป้า Mockup ปลาย ต.ค. แบบมีเงื่อนไข (CP4)' : 'ตามมาหลัง Government · วัน TBC'),
+        prereq: null, deliverable: null, unlocks: null, unlockLinks: [linkOf('R6')],
+        pending: f(t.notes[0], t.notes.slice(1)),
+        sourceRefs: [{ source: 'D26', sections: '§6, §17', note: 'Government ก่อน แล้ว Sales เอกชน' }],
+        timeline: { workstream: 'R6' },
+      }
+    }
+    case 'r5lanes': return { ...tool('R5 · Nation ID', 'On-ground · Online · Legacy', 'r5', [{ source: 'D26', sections: '§3, §8, §25', note: 'Register เดิม · Sandbox ~1 เดือน' }], ['meeting26', 'pending']), timeline: { workstream: 'R5' } }
+    case 'entities': return tool('Nation ID', 'สิ่งที่เชื่อมกัน', 'entities', [{ source: 'P26', note: 'โครงสร้าง Entity เป็นข้อเสนอ' }])
+    case 'lineflow': return tool('Nation ID', 'Flow LINE → Web', 'lineflow', [{ source: 'WEB', note: 'เอกสาร LINE/GA4 ทางการ (W1–W8)' }, { source: 'IMG', note: 'ภาพ Flow ของทีม — อ้างอิง' }], ['proposal', 'pending'])
+    case 'issues': return tool('Timeline', 'ตรวจวันที่', 'issues', [], ['pending'])
+    case 'owners': return tool('Owners', 'ใครรับผิดชอบอะไร', 'owners', [{ source: 'D26', note: 'ชื่อผู้รับผิดชอบจากประชุม 26 ก.ย.' }], ['meeting26', 'pending'])
+    case 'backup': return tool('Backup', 'Export / Import การแก้ไข', 'backup')
     case 'about': return {
       kindLabel: 'เกี่ยวกับหน้านี้', title: meta.title, badges: ['proposal'],
       what: f(`ผู้เสนอ ${meta.presenter} · ข้อมูล ณ ${fmtDate(meta.dataAsOf)} · ${meta.proposalStatus}`),
@@ -317,7 +402,7 @@ export function getDetail(sel: Selection): DetailContent {
       prereq: null, deliverable: null, unlocks: null,
       pending: f('เป็นภาพแผน ณ วันที่ข้อมูล ไม่ใช่ Live Tracker · ไม่มีความคืบหน้า/รายได้/Savings สมมติ'),
       sourceRefs: sources.map((s) => ({ source: s.id, note: s.usedFor })),
-      extra: { heading: 'Pilot Candidates', items: pilotCandidates.map((c) => `${c.id} ${c.title} — รอเลือก`) },
+      extra: { heading: 'เรื่องที่ต้องยืนยัน (ประชุม 26 ก.ย.)', items: [...openQuestions26, ...pilotCandidates.map((c) => `ประวัติ: ${c.id} ${c.title}`)], tone: 'caution' },
     }
   }
 }

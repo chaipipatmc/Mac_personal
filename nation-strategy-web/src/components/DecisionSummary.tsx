@@ -5,19 +5,19 @@ import { SceneShell } from './SceneShell'
 import { E } from './Editable'
 import { Icon, type IconName } from './Icon'
 
-const D_ICON: Record<string, IconName> = { D1: 'target', D2: 'key', D3: 'money', D4: 'flag' }
+const D_ICON: Record<string, IconName> = { D1: 'target', D2: 'userCheck', D3: 'people', D4: 'calendar', D5: 'swap', D6: 'key' }
 
 export function DecisionSummary() {
   const { select, isSelected } = useApp()
   return (
     <SceneShell
       id="decision"
-      headline="4 Decisions เพื่อเริ่ม"
+      headline="6 Decisions เพื่อเริ่ม"
       badges={['proposal', 'pending']}
       intro="ทุกข้อรอหารือ/อนุมัติ · เว็บนี้ไม่ส่งผลการตัดสินใจ"
       takeaway={meta.closing}
     >
-      <ul className="decisions">
+      <ul className="decisions decisions-6">
         {decisions.map((d) => (
           <li key={d.id} className={`dcard${isSelected('decision', d.id) ? ' is-selected' : ''}`}>
             <span className="dcard-no" aria-hidden="true"><Icon name={D_ICON[d.id]} size={24} /></span>

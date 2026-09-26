@@ -10,6 +10,8 @@ import {
   addTask, getRestoredUi, isEdited, patchMilestone, patchTask, registerUiPart, setDragging,
 } from '../lib/planStore'
 import { SceneShell } from './SceneShell'
+import { proposedCheckpoints } from '../data/upgrade26'
+import { dateIssues } from '../lib/validate'
 import { E } from './Editable'
 import { Icon, WS_ICON } from './Icon'
 
@@ -25,7 +27,7 @@ type CandFilter = 'all' | CandidateId | 'LOCAL'
 type DragKind = 'move' | 'start' | 'end' | 'ms'
 interface Drag { id: string; kind: DragKind; x0: number; delta: number; moved: boolean }
 
-const WS_ROW = 60
+const WS_ROW = 62
 const TASK_ROW = 52
 const CHIP_H = 28
 const PHASE_H = 26
@@ -88,6 +90,8 @@ export function InteractiveGantt() {
   const [drag, setDrag] = useState<Drag | null>(null)
   const [customPx, setCustomPx] = useState<number>(() => restored?.px ?? 10)
   const [maxed, setMaxed] = useState<boolean>(() => !!restored?.maxed)
+  const [mTab, setMTab] = useState<'gantt' | 'ms'>('gantt')
+  const [optsOpen, setOptsOpen] = useState(false)
   const [chartH, setChartH] = useState<number | null>(() => {
     try { const v = Number(localStorage.getItem(H_KEY)); return v >= 200 ? v : null } catch { return null }
   })
@@ -193,6 +197,8 @@ export function InteractiveGantt() {
 
   // ---- filters -------------------------------------------------------------
   const filterActive = wsFilter !== 'all' || prioFilter !== 'all' || candFilter !== 'all'
+  // Recomputed every render (cheap); planVersion re-renders this scene after edits.
+  const issueCount = dateIssues().length
   const taskMatches = (t: Task) =>
     (wsFilter === 'all' || t.workstreamId === wsFilter) &&
     (prioFilter === 'all' || t.priority === prioFilter) &&
@@ -488,7 +494,7 @@ export function InteractiveGantt() {
       intro={<p className="plan-warning"><strong><E k="timeline.warning" v="Plan — ไม่ใช่ Progress จริง" label="Warning" /></strong> · <E k="timeline.intro" v="แตะแถบหรือ ◆ เพื่อดู Details · โหมด Edit ลากปรับได้" label="Intro" /></p>}
       takeaway="ทุก Gate มี Deliverable + เงื่อนไข — ไม่ใช่แค่ถึงวันที่"
     >
-      <div className={`gantt${editMode ? ' is-edit' : ''}${maxed ? ' is-max' : ''}`}>
+      <div className={`gantt${editMode ? ' is-edit' : ''}${maxed ? ' is-max' : ''} tab-${mTab}`}>
         {editMode && <p className="gantt-edit-hint" role="note"><Icon name="review" size={16} />ลากแถบ = ย้าย · ลากขอบ = ปรับวัน · ลาก ◆ = ย้าย Gate · ปุ่ม + = เพิ่ม Task · แตะแถบเพื่อแก้คำ/Owner</p>}
 
         <div className="gantt-toolbar" role="toolbar" aria-label="ควบคุม Timeline">
@@ -507,7 +513,8 @@ export function InteractiveGantt() {
               <button key={iso} type="button" className="seg" onClick={() => jumpTo(iso)}>{monthShort(Number(iso.slice(5, 7)))}</button>
             ))}
           </div>
-          <div className="tb-group tb-filters">
+          <button type="button" className="seg tb-opts" aria-expanded={optsOpen} onClick={() => setOptsOpen((o) => !o)}>⚙ ตัวเลือก {optsOpen ? '▴' : '▾'}</button>
+          <div className={`tb-group tb-filters${optsOpen ? ' is-open' : ''}`}>
             <label>
               <span className="tb-label">Workstream</span>
               <select value={wsFilter} onChange={(e) => setWsFilter(e.target.value as 'all' | WorkstreamId)}>
@@ -542,6 +549,24 @@ export function InteractiveGantt() {
             {hasFocus && <button type="button" className="seg" onClick={close}>Clear Selection</button>}
             <button type="button" className="seg" aria-pressed={maxed} onClick={() => setMaxed(!maxed)}>{maxed ? '⤡ Exit full view' : '⤢ Maximize'}</button>
           </div>
+        </div>
+
+        <div className="cp-strip" aria-label="Checkpoints ที่เสนอ">
+          <button type="button" className={`issue-chip${issueCount ? ' has-issues' : ''}`} aria-haspopup="dialog" onClick={(e) => select({ kind: 'issues', id: 'dates' }, e.currentTarget)}>
+            {issueCount ? `⚠ ตรวจวันที่ ${issueCount} เรื่อง` : '✓ วันที่ไม่ขัดกัน'}
+          </button>
+          <span className="cp-strip-h">Checkpoints ที่เสนอ</span>
+          {proposedCheckpoints.map((c) => (
+            <button key={c.id} type="button" className={`cp-chip${c.targetWindow ? ' has-window' : ''}${selection?.kind === 'cp26' && selection.id === c.id ? ' is-selected' : ''}`} aria-haspopup="dialog" onClick={(e) => select({ kind: 'cp26', id: c.id }, e.currentTarget)}>
+              <strong>{c.id}</strong> {c.label}
+              <span className="cp-when">{c.targetWindow ? fmtRange(c.targetWindow.from, c.targetWindow.to) : 'รอยืนยันวัน'}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="m-tabs" role="tablist" aria-label="มุมมอง">
+          <button type="button" role="tab" aria-selected={mTab === 'gantt'} onClick={() => setMTab('gantt')}>Gantt</button>
+          <button type="button" role="tab" aria-selected={mTab === 'ms'} onClick={() => setMTab('ms')}>Milestones</button>
         </div>
 
         {(filterActive || hiddenRelated.length > 0) && (
@@ -628,6 +653,10 @@ export function InteractiveGantt() {
                     <span key={m.id} className={`g-msline${hasFocus ? (lit(m.id) ? ' is-lit' : ' is-dim') : ''}`} style={{ left: xMid(m.date) }} />
                   ))}
                   <span className="g-marker-line" style={{ left: xMid(minimumDataMarker.date) }} />
+                  {proposedCheckpoints.filter((c) => c.targetWindow).map((c) => {
+                    const l = xOf(c.targetWindow!.from); const w = xOf(c.targetWindow!.to) + pxPerDay - l
+                    return <span key={c.id} className="cp-band" style={{ left: l, width: w }}><span className="cp-band-label">{c.id}</span></span>
+                  })}
                   {todayIn && <span className="g-today" style={{ left: xMid(today) }} />}
                 </div>
 
@@ -646,8 +675,9 @@ export function InteractiveGantt() {
                           <button type="button" className="g-name" aria-haspopup="dialog" onClick={(e) => select({ kind: 'workstream', id: r.ws }, e.currentTarget)}>
                             <span className="g-ico"><Icon name={WS_ICON[w.id]} size={18} /></span>
                             <span className="g-id">{w.id}</span>
-                            <span className="g-title">{narrow ? w.shortTitle : w.title}</span>
+                            <span className="g-title" title={w.title}>{narrow || textWidth(w.title, 800) * 14 / 13 > labelW - 116 ? w.shortTitle : w.title}</span>
                             {supportWs.has(r.ws) && <span className="g-support">support ┄</span>}
+                            {!narrow && <span className={`g-owner${/TBC/.test(w.ownerLabel) ? ' is-tbc' : ''}`} title={w.ownerLabel}>{w.ownerLabel}</span>}
                           </button>
                           {editMode && <button type="button" className="g-add" onClick={() => onAdd(r.ws)} aria-label={`เพิ่ม Task ใน ${w.id}`}><Icon name="plus" size={16} /></button>}
                         </div>
@@ -715,6 +745,7 @@ export function InteractiveGantt() {
           <li><i className="lg-diamond lg-diamond-meeting" /> Date from Meeting</li>
           <li><i className="lg-today" /> Today</li>
           <li><i className="lg-solid" /> Must finish first</li>
+          <li><i className="lg-cpband" /> Checkpoint ที่เสนอ (ไม่ใช่ Gate ใหม่)</li>
           <li>✎ แก้ไขแล้ว · ⚠ เริ่มก่อนงานก่อนหน้าเสร็จ</li>
         </ul>
         <p className="gantt-foot"><Icon name="calendar" size={16} />1 ต.ค. = วันจากบันทึก · 31 ธ.ค. = กรอบ Reform · วันอื่น = Proposal · ยังไม่มี Gate ใดผ่าน</p>

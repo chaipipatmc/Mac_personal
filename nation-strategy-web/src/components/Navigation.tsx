@@ -53,7 +53,7 @@ export function StepButtons({ active }: { active: SceneId }) {
   return (
     <div className="stepper" role="group" aria-label="เลื่อนฉาก">
       <button type="button" disabled={!prev} onClick={() => prev && goScene(prev.id)} aria-label={prev ? `ก่อนหน้า: ${prev.nav}` : 'ก่อนหน้า'}>←</button>
-      <span className="stepper-count">{SCENES[i].no}/08</span>
+      <span className="stepper-count">{SCENES[i].no}/{String(SCENES.length).padStart(2, '0')}</span>
       <button type="button" disabled={!next} onClick={() => next && goScene(next.id)} aria-label={next ? `ถัดไป: ${next.nav}` : 'ถัดไป'}>→</button>
     </div>
   )
@@ -81,7 +81,7 @@ export function BottomNav({ active }: { active: SceneId }) {
       <div className="bottom-row">
         <button type="button" className="bn-step" disabled={!prev} onClick={() => prev && goScene(prev.id)} aria-label={prev ? `ก่อนหน้า: ${prev.nav}` : 'ก่อนหน้า'}>‹</button>
         <button type="button" className="bn-current" aria-expanded={open} aria-controls="bottom-menu" onClick={() => setOpen((o) => !o)}>
-          <span className="nav-no">{SCENES[i].no}/08</span> {SCENES[i].nav} <span aria-hidden="true">{open ? '▾' : '▴'}</span>
+          <span className="nav-no">{SCENES[i].no}/{String(SCENES.length).padStart(2, '0')}</span> {SCENES[i].nav} <span aria-hidden="true">{open ? '▾' : '▴'}</span>
         </button>
         <button type="button" className="bn-step" disabled={!next} onClick={() => next && goScene(next.id)} aria-label={next ? `ถัดไป: ${next.nav}` : 'ถัดไป'}>›</button>
       </div>

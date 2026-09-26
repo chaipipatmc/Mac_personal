@@ -4,10 +4,13 @@ import { getDetail, type Field, type LinkItem } from '../data/details'
 import { sourceById, taskById } from '../data/nationPlan'
 import { Badge } from './Badge'
 import { EditForm } from './EditForm'
+import { BackupTool, EntitiesTable, IssuesList, LineFlowView, OwnersBoard, R5Lanes, R6Tracks } from './PanelTools'
 import { E } from './Editable'
 import { patchMilestone, patchTask, patchWorkstream } from '../lib/planStore'
 import type { Selection } from '../lib/selection'
 import { msById, wsById, type MilestoneId, type WorkstreamId } from '../data/nationPlan'
+
+const CUSTOM = { owners: OwnersBoard, backup: BackupTool, issues: IssuesList, entities: EntitiesTable, lineflow: LineFlowView, r6: R6Tracks, r5: R5Lanes }
 
 const ROWS = [
   ['what', 'What'],
@@ -46,6 +49,7 @@ function titleBinding(sel: Selection, fallback: string) {
   if (sel.kind === 'task' && taskById[sel.id]) return <E value={taskById[sel.id].title} onSave={(v) => patchTask(sel.id, { title: v })} label="Title" />
   if (sel.kind === 'milestone') return <E value={msById[sel.id as MilestoneId].label} onSave={(v) => patchMilestone(sel.id as MilestoneId, { label: v })} label="Label" />
   if (sel.kind === 'workstream') return <E value={wsById[sel.id as WorkstreamId].title} onSave={(v) => patchWorkstream(sel.id as WorkstreamId, { title: v })} label="Title" />
+  if (sel.kind === 'outcome') return <E k={`outcome.${sel.id}.label`} v={fallback} label="Outcome" />
   return <E k={`d.${sel.kind}.${sel.id}.title`} v={fallback} label="Title" />
 }
 
@@ -98,7 +102,8 @@ export function DetailPanel() {
         </header>
         <div className="panel-body">
           {editMode && <EditForm sel={selection} onRemoved={close} />}
-          <dl className="detail-rows">
+          {d.custom && (() => { const C = CUSTOM[d.custom]; return <div className={`custom custom-${d.custom}`}><C /></div> })()}
+          {!d.hideRows && <dl className="detail-rows">
             {ROWS.map(([k, label]) => {
               const field = d[k]
               return (
@@ -112,14 +117,14 @@ export function DetailPanel() {
                 </div>
               )
             })}
-          </dl>
+          </dl>}
           {d.extra && (
             <div className={`extra ${d.extra.tone === 'caution' ? 'extra-caution' : ''}`}>
               <h3>{d.extra.heading}</h3>
               <ul>{d.extra.items.map((i) => <li key={i}>{i}</li>)}</ul>
             </div>
           )}
-          <details className="sources">
+          {d.sourceRefs.length > 0 && <details className="sources">
             <summary>Sources ({d.sourceRefs.length})</summary>
             <ul>
               {d.sourceRefs.map((s, i) => (
@@ -129,7 +134,7 @@ export function DetailPanel() {
                 </li>
               ))}
             </ul>
-          </details>
+          </details>}
         </div>
         {d.timeline && !timelineVisible && (
           <footer className="panel-foot">

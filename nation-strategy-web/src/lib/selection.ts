@@ -3,18 +3,22 @@ import type { MilestoneId, WorkstreamId } from '../data/nationPlan'
 export type SelKind =
   | 'workstream' | 'task' | 'milestone' | 'outcome' | 'r1func' | 'flow' | 'path' | 'extra'
   | 'priority' | 'candidate' | 'depnode' | 'checkpoint' | 'decision' | 'weekly' | 'p3' | 'about'
+  | 'connected' | 'nid' | 'entities' | 'lineflow' | 'r6track' | 'r5lanes' | 'focus' | 'cp26'
+  | 'issues' | 'owners' | 'backup'
 
 export interface Selection { kind: SelKind; id: string }
 
 export const SCENES = [
   { id: 'direction', nav: 'Direction', no: '01', chapter: 'A' },
   { id: 'plan', nav: 'Workstreams', no: '02', chapter: 'A' },
-  { id: 'value', nav: 'Value', no: '03', chapter: 'A' },
-  { id: 'priority', nav: 'Priority', no: '04', chapter: 'B' },
-  { id: 'dependency', nav: 'Dependency', no: '05', chapter: 'B' },
-  { id: 'timeline', nav: 'Timeline', no: '06', chapter: 'B' },
-  { id: 'acceptance', nav: 'Acceptance', no: '07', chapter: 'B' },
-  { id: 'decision', nav: 'Decision', no: '08', chapter: 'B' },
+  { id: 'connected-organization', nav: 'Connected Org', no: '03', chapter: 'A' },
+  { id: 'nation-id', nav: 'Nation ID', no: '04', chapter: 'A' },
+  { id: 'value', nav: 'Value', no: '05', chapter: 'A' },
+  { id: 'priority', nav: 'Priority', no: '06', chapter: 'B' },
+  { id: 'dependency', nav: 'Dependency', no: '07', chapter: 'B' },
+  { id: 'timeline', nav: 'Timeline', no: '08', chapter: 'B' },
+  { id: 'acceptance', nav: 'Acceptance', no: '09', chapter: 'B' },
+  { id: 'decision', nav: 'Decision', no: '10', chapter: 'B' },
 ] as const
 
 export type SceneId = (typeof SCENES)[number]['id']

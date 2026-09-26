@@ -1,9 +1,13 @@
 # NATION — Strategy to Execution
 
 เว็บนำเสนอ (ภาษาไทย, Responsive) ให้ Mac ใช้สรุปทิศทาง Media Tech และเสนอ Roadmap Execution ให้คุณฉาย
-**สถานะ: ร่างเพื่อหารือและอนุมัติ · ข้อมูล ณ 23 ก.ย. 2026 · เป็นภาพแผน ไม่ใช่ Live Tracker**
+**สถานะ: ร่างเพื่อหารือและอนุมัติ · ข้อมูล ณ 23 ก.ย. 2026 + ปรับตามประชุม 26 ก.ย. · เป็นภาพแผน ไม่ใช่ Live Tracker**
 
-8 ฉาก / 2 บท: ทิศทาง → แผนงาน → คุณค่า → ก่อน–หลัง → งานเชื่อมกัน → Timeline → ตรวจรับ → ขออนุมัติ
+ดูการเปลี่ยนแปลงใน [CHANGELOG.md](CHANGELOG.md)
+
+10 ฉาก / 2 บท: ทิศทาง → Workstreams → Connected Org → Nation ID → คุณค่า → Focus → งานเชื่อมกัน → Timeline → ตรวจรับ → ขออนุมัติ
+
+เป็นเว็บนำเสนอ Strategy เท่านั้น — ไม่ได้สร้าง Nation ID, LINE Login, GA4 หรือ AI Agent จริง และไม่เก็บข้อมูลผู้ใช้
 
 ## เปิดใช้งาน
 
@@ -40,7 +44,8 @@ npm run check        # ทั้งหมด
 
 ปุ่มมุมขวาบน: **Present** = หน้าสะอาดสำหรับนำเสนอ · **Edit** = หลังบ้าน
 - ข้อความที่มีเส้นประ (หัวข้อ, คำอธิบาย, Key, การ์ด, ป้าย, ช่องในแผงรายละเอียด) คลิกเพื่อแก้คำได้ — `Reset to original` คืนคำเดิม
-- Owner แก้ได้ที่ Task / Milestone / Workstream (ในแผงรายละเอียด)
+- Owner แก้ได้ที่ Task / Milestone / Workstream (ในแผงรายละเอียด) หรือรวมที่ปุ่ม **Owners · ใครรับผิดชอบอะไร** (ฉาก Workstreams / แถบ Edit): Owner + Support ของ R1–R7, 6A/6B และ Owner ราย Task
+- **Backup**: Export (คัดลอก JSON) / Import (ตรวจ documentId ก่อนนำเข้า)
 - แถบ Edit ด้านล่าง: สถานะบันทึก · Undo · Save now · Reset all · Done → Present
 - คำที่แก้เก็บเป็น `text` overrides ใน `PlanEdits` (key เช่น `timeline.headline`, `d.task.T18.why`)
 
@@ -54,6 +59,8 @@ Zoom: ปุ่ม − / + , Overview / Month / Week หรือ Ctrl/⌘ + scr
 - แตะแถบ/Milestone/Workstream เพื่อแก้คำและวันที่ในแผงรายละเอียด · ปุ่ม `+` ในแถว Workstream = เพิ่ม Task
 - คีย์บอร์ด: โฟกัสแถบแล้วกด ← → เพื่อเลื่อน 1 วัน, Shift + ← → เพื่อปรับวันจบ
 - Undo, Reset รายการ, Reset all · แถบที่แก้แล้วมี ✎ และงานที่เริ่มก่อนงานก่อนหน้าเสร็จมี ⚠
+- ชิป **⚠ ตรวจวันที่ N เรื่อง** (`src/lib/validate.ts`): งานเริ่มก่อน predecessor · Gate ก่อนงานที่ป้อนเสร็จ · Gate นอกแถบ · เลย 31 ธ.ค. · หัวข้อ Timeline ไม่ตรงช่วงแผน — แจ้งเตือนเท่านั้น ไม่ย้ายวันเอง, บันทึกเหตุผลได้ต่อรายการ
+- Checkpoints ที่เสนอ CP1–CP6 (ผูกกับ Gate เดิม ไม่ใช่ Milestone ใหม่) — CP4/CP5 แสดงเป็นแถบช่วงเวลา ที่เหลือ "รอยืนยันวัน"
 
 การบันทึก (`src/lib/planStore.ts`):
 - **บน claude.ai** (artifact ที่ประกาศ capability `artifact`): บันทึกอัตโนมัติ ~4 วินาทีหลังแก้ โดยหน้าเว็บ publish ตัวเองเป็นเวอร์ชันใหม่
@@ -67,6 +74,7 @@ Zoom: ปุ่ม − / + , Overview / Month / Week หรือ Ctrl/⌘ + scr
 
 ```
 src/data/nationPlan.ts      ข้อมูลทั้งหมด
+src/data/upgrade26.ts       เนื้อหาหลังประชุม 26 ก.ย. (Connected Org, Nation ID, Focus, Checkpoints, คำถามค้าง)
 src/data/details.ts         ประกอบเนื้อหา Detail Panel (ทำอะไร → … → เรื่องรอยืนยัน)
 src/lib/                    วันที่ (UTC calendar), dependency graph, hash routing
 src/components/             SceneShell, StrategyMap, ValueFlow, PriorityLanes, DependencyMap,
@@ -75,7 +83,7 @@ scripts/checkData.ts        ตรวจความถูกต้องขอ�
 scripts/e2e.mjs             ทดสอบการแสดงผลและการโต้ตอบ
 ```
 
-ลิงก์แชร์ฉากได้ด้วย hash เช่น `#timeline?workstream=R6&milestone=M4` หรือ `#timeline?task=T18`
+ลิงก์แชร์ฉากได้ด้วย hash เช่น `#timeline?workstream=R6&milestone=M4`, `#timeline?task=T18`, `#connected-organization`, `#nation-id`
 
 ## ข้อควรระวังก่อนแชร์
 

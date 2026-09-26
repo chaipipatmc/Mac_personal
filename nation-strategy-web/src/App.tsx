@@ -9,6 +9,8 @@ import { TextEditor } from './components/Editable'
 import { DirectionScene } from './components/DirectionScene'
 import { StrategyMap } from './components/StrategyMap'
 import { ValueFlow } from './components/ValueFlow'
+import { ConnectedOrg } from './components/ConnectedOrg'
+import { NationId } from './components/NationId'
 import { PriorityLanes } from './components/PriorityLanes'
 import { DependencyMap } from './components/DependencyMap'
 import { InteractiveGantt } from './components/InteractiveGantt'
@@ -180,6 +182,8 @@ export default function App() {
       <main id="main">
         <DirectionScene />
         <StrategyMap />
+        <ConnectedOrg />
+        <NationId />
         <ValueFlow />
         <PriorityLanes />
         <DependencyMap />
@@ -187,8 +191,9 @@ export default function App() {
         <AcceptanceScene />
         <DecisionSummary />
         <footer className="site-footer">
-          <p>Draft for discussion · as of 23 ก.ย. 2026 · Plan, not a Live Tracker</p>
+          <p>Draft for discussion · updated after meeting 26 ก.ย. 2026 · Plan, not a Live Tracker</p>
           <button type="button" className="link-btn" onClick={(e) => select({ kind: 'about', id: 'about' }, e.currentTarget)}>Sources & Limitations</button>
+          <button type="button" className="link-btn" onClick={(e) => select({ kind: 'backup', id: 'backup' }, e.currentTarget)}>Backup (Export / Import)</button>
         </footer>
       </main>
       <BottomNav active={active} />
